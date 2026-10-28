@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import { DHIKR_LIST, THEMES, THEME_ORDER } from './data/dhikrs';
+import { DHIKR_LIST, THEMES } from './data/dhikrs';
 import {
   loadSessionState,
   saveSessionState,
@@ -80,7 +80,6 @@ export default function App() {
 
   // Zikir Sayacını Artırma ve Odak Ritmine Göre Ambiyans Sesini Uyarlama
   const handleIncrement = useCallback(() => {
-    // Kullanıcının zikir odak ritmini ölç ve arka plan doğa/ney sesini dinamik olarak uyarla
     pulseAmbientFocusRhythm(
       settings.ambientEnabled,
       settings.ambientMode,
@@ -172,13 +171,6 @@ export default function App() {
     setSettings((prev) => ({ ...prev, ...partial }));
   };
 
-  // Hızlı Manzara Değiştirme
-  const handleCycleTheme = () => {
-    const currentIndex = THEME_ORDER.indexOf(settings.themeId);
-    const nextIndex = (currentIndex + 1) % THEME_ORDER.length;
-    handleUpdateSettings({ themeId: THEME_ORDER[nextIndex] });
-  };
-
   return (
     <div className="relative min-h-dvh w-full overflow-x-hidden">
       {/* Seçilen Temanın Görsel ve Atmosferik Arka Planı */}
@@ -207,25 +199,12 @@ export default function App() {
           currentCount={session.currentCount}
           targetCount={session.targetCount}
           soundEnabled={settings.soundEnabled}
-          ambientEnabled={settings.ambientEnabled}
-          ambientMode={settings.ambientMode}
           reducedMotion={settings.reducedMotion}
           onIncrement={handleIncrement}
           onReset={handleResetSession}
           onToggleSound={() =>
             handleUpdateSettings({ soundEnabled: !settings.soundEnabled })
           }
-          onSelectAmbient={(enabled, mode) => {
-            const nextMode = mode || settings.ambientMode;
-            handleUpdateSettings({
-              ambientEnabled: enabled,
-              ambientMode: nextMode,
-            });
-            if (enabled) {
-              pulseAmbientFocusRhythm(true, nextMode, settings.themeId);
-            }
-          }}
-          onCycleTheme={handleCycleTheme}
           onOpenGoalModal={() => setIsGoalModalOpen(true)}
           onBackHome={() => setScreen('home')}
         />

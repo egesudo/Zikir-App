@@ -67,7 +67,7 @@ function getLoopingNatureBuffer(ctx: AudioContext): AudioBuffer {
     b3 = 0.86650 * b3 + white * 0.3104856;
     b4 = 0.55000 * b4 + white * 0.5329522;
     b5 = -0.7616 * b5 - white * 0.0168980;
-    data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.045;
+    data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.048;
     b6 = white * 0.115926;
   }
 
@@ -106,43 +106,59 @@ export function resolveAmbientProfile(
   }
 }
 
-// --- SÜREKLİ DÖNGÜSEL VE RİTME DUYARLI ARKA PLAN AMBİYANS MOTORU ---
+// --- ZİKİR RİTMİYLE SENKRONİZE DÖNGÜSEL DOĞA VE NEY AMBİYANS MOTORU ---
 
 interface ActiveAmbientGraph {
   profile: 'wind' | 'river' | 'ney';
   masterGain: GainNode;
   warmthFilter: BiquadFilterNode;
+  lfoOsc: OscillatorNode;
   cleanup: () => void;
 }
 
 let activeAmbient: ActiveAmbientGraph | null = null;
-let focusIntensity = 0.2; // 0.18 (dingin fısıltı) -> 1.0 (derin odak ritmi)
+let focusIntensity = 0.22; // 0.18 (dingin fısıltı) -> 1.0 (derin odak ritmi)
+let rhythmCadenceHz = 0.25; // Zikir çekim hızına göre senkronize LFO dalga frekansı
 let lastTapTimestamp = 0;
 let decayIntervalId: number | null = null;
-let currentFocusCallback: ((intensity: number) => void) | null = null;
 
-export function onFocusIntensityChange(cb: ((intensity: number) => void) | null): void {
-  currentFocusCallback = cb;
-  if (cb) cb(focusIntensity);
-}
-
-function applyDynamicFocusToAudio(ctx: AudioContext): void {
+function applyDynamicFocusToAudio(ctx: AudioContext, withPulseCrest = false): void {
   if (!activeAmbient) return;
   const now = ctx.currentTime;
 
-  // Odak ritmine göre ses seviyesi (0.018 fısıltıdan 0.088 sıcak sarmalayıcı seviyeye)
-  const targetGain = 0.018 + focusIntensity * 0.07;
-  activeAmbient.masterGain.gain.setTargetAtTime(targetGain, now, 0.45);
+  // Odak ritmine göre temel ses seviyesi
+  const baseTargetGain = 0.02 + focusIntensity * 0.072;
+  // Zikir dokunuşu anında ritimle senkronize yumuşak dalga tepesi (swell crest)
+  const crestGain = withPulseCrest ? Math.min(0.115, baseTargetGain * 1.32) : baseTargetGain;
+
+  activeAmbient.masterGain.gain.cancelScheduledValues(now);
+  if (withPulseCrest) {
+    activeAmbient.masterGain.gain.setTargetAtTime(crestGain, now, 0.12);
+    activeAmbient.masterGain.gain.setTargetAtTime(baseTargetGain, now + 0.28, 0.45);
+  } else {
+    activeAmbient.masterGain.gain.setTargetAtTime(baseTargetGain, now, 0.45);
+  }
 
   // Odak ritmine göre filtre sıcaklığı ve açıklığı
   const baseCutoff =
     activeAmbient.profile === 'wind'
       ? 260
       : activeAmbient.profile === 'river'
-      ? 360
-      : 310;
-  const dynamicCutoff = baseCutoff + focusIntensity * 340;
-  activeAmbient.warmthFilter.frequency.setTargetAtTime(dynamicCutoff, now, 0.55);
+      ? 380
+      : 320;
+  const dynamicCutoff = baseCutoff + focusIntensity * 360 + (withPulseCrest ? 95 : 0);
+  activeAmbient.warmthFilter.frequency.cancelScheduledValues(now);
+  activeAmbient.warmthFilter.frequency.setTargetAtTime(dynamicCutoff, now, 0.22);
+  if (withPulseCrest) {
+    activeAmbient.warmthFilter.frequency.setTargetAtTime(
+      baseCutoff + focusIntensity * 360,
+      now + 0.3,
+      0.5
+    );
+  }
+
+  // Döngüsel doğa sesinin dalgalanma hızını kullanıcının zikir ritmine (cadence) senkronize et
+  activeAmbient.lfoOsc.frequency.setTargetAtTime(rhythmCadenceHz, now, 0.5);
 }
 
 function ensureDecayLoop(): void {
@@ -153,11 +169,9 @@ function ensureDecayLoop(): void {
     // Kullanıcı 2.8 saniyeden uzun süre dokunmadığında ambiyans yumuşakça dinlenme seviyesine çekilir
     if (idleMs > 2800 && focusIntensity > 0.18) {
       focusIntensity = Math.max(0.18, focusIntensity - 0.045);
+      rhythmCadenceHz = Math.max(0.14, rhythmCadenceHz * 0.92);
       if (audioCtx && activeAmbient) {
-        applyDynamicFocusToAudio(audioCtx);
-      }
-      if (currentFocusCallback) {
-        currentFocusCallback(focusIntensity);
+        applyDynamicFocusToAudio(audioCtx, false);
       }
     }
   }, 650);
@@ -173,31 +187,31 @@ function buildAmbientGraph(
 
   const warmthFilter = ctx.createBiquadFilter();
   warmthFilter.type = 'lowpass';
-  warmthFilter.frequency.setValueAtTime(340, now);
+  warmthFilter.frequency.setValueAtTime(360, now);
 
   warmthFilter.connect(masterGain);
   masterGain.connect(ctx.destination);
 
   const sourcesToStop: AudioScheduledSourceNode[] = [];
   const nodesToDisconnect: AudioNode[] = [masterGain, warmthFilter];
+  let primaryLfo: OscillatorNode;
 
   if (profile === 'wind') {
-    // UZAK SEHER RÜZGÂRI: LFO modülasyonlu çift katmanlı vadi esintisi
+    // ESİNTİLİ VADİ: LFO modülasyonlu çift katmanlı vadi rüzgârı
     const noiseSrc = ctx.createBufferSource();
     noiseSrc.buffer = getLoopingNatureBuffer(ctx);
     noiseSrc.loop = true;
 
     const windBand = ctx.createBiquadFilter();
     windBand.type = 'bandpass';
-    windBand.frequency.setValueAtTime(280, now);
-    windBand.Q.setValueAtTime(2.6, now);
+    windBand.frequency.setValueAtTime(285, now);
+    windBand.Q.setValueAtTime(2.5, now);
 
-    // Rüzgârın yavaşça yükselip alçalmasını sağlayan LFO (0.13 Hz ~ 7.7 saniyelik dalga)
     const lfo = ctx.createOscillator();
     const lfoGain = ctx.createGain();
     lfo.type = 'sine';
-    lfo.frequency.setValueAtTime(0.13, now);
-    lfoGain.gain.setValueAtTime(110, now);
+    lfo.frequency.setValueAtTime(0.16, now);
+    lfoGain.gain.setValueAtTime(115, now);
 
     lfo.connect(lfoGain);
     lfoGain.connect(windBand.frequency);
@@ -207,32 +221,32 @@ function buildAmbientGraph(
 
     noiseSrc.start(now);
     lfo.start(now);
+    primaryLfo = lfo;
     sourcesToStop.push(noiseSrc, lfo);
     nodesToDisconnect.push(noiseSrc, windBand, lfo, lfoGain);
   } else if (profile === 'river') {
-    // SAKİN DERE / ŞADIRVAN AKIŞI: Yumuşak su gövdesi + dalgalanma rezonansı
+    // HUZURLU ŞADIRVAN: Yumuşak su akışı + ritmik şadırvan dalgalanması
     const streamSrc = ctx.createBufferSource();
     streamSrc.buffer = getLoopingNatureBuffer(ctx);
     streamSrc.loop = true;
 
     const waterBodyFilter = ctx.createBiquadFilter();
     waterBodyFilter.type = 'lowpass';
-    waterBodyFilter.frequency.setValueAtTime(420, now);
+    waterBodyFilter.frequency.setValueAtTime(430, now);
 
     const rippleFilter = ctx.createBiquadFilter();
     rippleFilter.type = 'bandpass';
-    rippleFilter.frequency.setValueAtTime(780, now);
-    rippleFilter.Q.setValueAtTime(3.2, now);
+    rippleFilter.frequency.setValueAtTime(790, now);
+    rippleFilter.Q.setValueAtTime(3.0, now);
 
     const rippleGain = ctx.createGain();
-    rippleGain.gain.setValueAtTime(0.35, now);
+    rippleGain.gain.setValueAtTime(0.38, now);
 
-    // Su şırıltısı dalgalanma LFO'su
     const waterLfo = ctx.createOscillator();
     const waterLfoGain = ctx.createGain();
     waterLfo.type = 'sine';
     waterLfo.frequency.setValueAtTime(0.28, now);
-    waterLfoGain.gain.setValueAtTime(160, now);
+    waterLfoGain.gain.setValueAtTime(170, now);
 
     waterLfo.connect(waterLfoGain);
     waterLfoGain.connect(rippleFilter.frequency);
@@ -246,6 +260,7 @@ function buildAmbientGraph(
 
     streamSrc.start(now);
     waterLfo.start(now);
+    primaryLfo = waterLfo;
     sourcesToStop.push(streamSrc, waterLfo);
     nodesToDisconnect.push(
       streamSrc,
@@ -256,20 +271,19 @@ function buildAmbientGraph(
       waterLfoGain
     );
   } else {
-    // YUMUŞAK NEY DEM TINISI: Rast/Uşşak Re3 (146.83 Hz) + La3 (220 Hz) sıcak nefes dem katmanı
+    // HAFİF NEY: Rast/Uşşak Re3 (146.83 Hz) + La3 (220 Hz) sıcak nefes dem katmanı
     const droneOsc1 = ctx.createOscillator();
     const droneOsc2 = ctx.createOscillator();
     const droneGain = ctx.createGain();
 
     droneOsc1.type = 'sine';
-    droneOsc1.frequency.setValueAtTime(146.83, now); // Re3
+    droneOsc1.frequency.setValueAtTime(146.83, now);
 
     droneOsc2.type = 'triangle';
-    droneOsc2.frequency.setValueAtTime(220.0, now); // La3
+    droneOsc2.frequency.setValueAtTime(220.0, now);
 
     droneGain.gain.setValueAtTime(0.32, now);
 
-    // Ney nefes dokusu
     const breathSrc = ctx.createBufferSource();
     breathSrc.buffer = getLoopingNatureBuffer(ctx);
     breathSrc.loop = true;
@@ -282,11 +296,10 @@ function buildAmbientGraph(
     const breathGain = ctx.createGain();
     breathGain.gain.setValueAtTime(0.22, now);
 
-    // Yavaş nefes LFO modülasyonu
     const neyLfo = ctx.createOscillator();
     const neyLfoGain = ctx.createGain();
     neyLfo.type = 'sine';
-    neyLfo.frequency.setValueAtTime(0.16, now);
+    neyLfo.frequency.setValueAtTime(0.18, now);
     neyLfoGain.gain.setValueAtTime(0.08, now);
 
     neyLfo.connect(neyLfoGain);
@@ -304,6 +317,7 @@ function buildAmbientGraph(
     droneOsc2.start(now);
     breathSrc.start(now);
     neyLfo.start(now);
+    primaryLfo = neyLfo;
 
     sourcesToStop.push(droneOsc1, droneOsc2, breathSrc, neyLfo);
     nodesToDisconnect.push(
@@ -322,6 +336,7 @@ function buildAmbientGraph(
     profile,
     masterGain,
     warmthFilter,
+    lfoOsc: primaryLfo,
     cleanup: () => {
       try {
         const stopTime = ctx.currentTime + 0.15;
@@ -331,7 +346,7 @@ function buildAmbientGraph(
             try {
               s.stop();
             } catch {
-              // Zaten durmuşsa yoksay
+              // Yoksay
             }
           });
           nodesToDisconnect.forEach((n) => {
@@ -369,7 +384,7 @@ export function syncAmbientSoundscape(
     const targetProfile = resolveAmbientProfile(mode, themeId);
 
     if (activeAmbient && activeAmbient.profile === targetProfile) {
-      applyDynamicFocusToAudio(ctx);
+      applyDynamicFocusToAudio(ctx, false);
       ensureDecayLoop();
       return;
     }
@@ -380,15 +395,16 @@ export function syncAmbientSoundscape(
     }
 
     activeAmbient = buildAmbientGraph(ctx, targetProfile);
-    applyDynamicFocusToAudio(ctx);
+    applyDynamicFocusToAudio(ctx, false);
     ensureDecayLoop();
   } catch {
-    // Tarayıcı henüz ses etkileşimine izin vermediyse ilk dokunuşta başlar
+    // İlk dokunuşta başlar
   }
 }
 
 /**
- * Kullanıcının her zikir dokunuşunda odak ritmini ölçer ve arka plan ambiyans sesini dinamik olarak uyarlar.
+ * Kullanıcının her zikir dokunuşunda (veya Ayarlar'da önizleme seçtiğinde)
+ * odak ritmini ölçer ve 'Huzurlu Şadırvan' / 'Esintili Vadi' döngüsünü zikir ritmiyle senkronize dalgalandırır.
  */
 export function pulseAmbientFocusRhythm(
   ambientEnabled: boolean,
@@ -396,26 +412,28 @@ export function pulseAmbientFocusRhythm(
   themeId: ThemeId
 ): number {
   const nowMs = performance.now();
-  const deltaMs = lastTapTimestamp > 0 ? nowMs - lastTapTimestamp : 1500;
+  const deltaMs = lastTapTimestamp > 0 ? nowMs - lastTapTimestamp : 1400;
   lastTapTimestamp = nowMs;
 
-  // Düzenli ve tefekkür odaklı zikir temposu (350ms - 4200ms arası) odak yoğunluğunu artırır
+  // Düzenli ve tefekkür odaklı zikir temposu (350ms - 4200ms arası) odak yoğunluğunu ve ritim senkronunu ayarlar
   if (deltaMs >= 350 && deltaMs <= 4200) {
-    focusIntensity = Math.min(1.0, Math.max(0.42, focusIntensity + 0.16));
+    focusIntensity = Math.min(1.0, Math.max(0.45, focusIntensity + 0.16));
+    // Kullanıcının zikir hızına uyumlu yumuşak dalgalanma frekansı (0.18 Hz - 0.75 Hz arası)
+    const tapFreqHz = 1000 / deltaMs;
+    rhythmCadenceHz = Math.min(0.75, Math.max(0.18, tapFreqHz * 0.45));
   } else if (deltaMs < 350) {
-    // Çok hızlı dokunuşlarda yumuşak artış
-    focusIntensity = Math.min(0.9, Math.max(0.4, focusIntensity + 0.08));
+    focusIntensity = Math.min(0.92, Math.max(0.42, focusIntensity + 0.08));
+    rhythmCadenceHz = 0.55;
   } else {
-    // Uzun bir aradan sonra yeni başlangıç
-    focusIntensity = Math.max(0.4, focusIntensity);
-  }
-
-  if (currentFocusCallback) {
-    currentFocusCallback(focusIntensity);
+    focusIntensity = Math.max(0.45, focusIntensity);
+    rhythmCadenceHz = 0.24;
   }
 
   if (ambientEnabled) {
     syncAmbientSoundscape(true, mode, themeId);
+    if (audioCtx && activeAmbient) {
+      applyDynamicFocusToAudio(audioCtx, true);
+    }
   }
 
   return focusIntensity;

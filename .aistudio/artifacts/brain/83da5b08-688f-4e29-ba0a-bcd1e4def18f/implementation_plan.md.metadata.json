@@ -1,6 +1,6 @@
 {
-  "summary":  "Zikir ekranına doğrudan 'Huzurlu Şadırvan', 'Esintili Vadi' ve 'Hafif Ney' arasında geçiş yapılmasını sağlayan zarif bir 'Doğa Sesi Türü' seçici eklenmesi planı.",
-  "updatedAt":  "2026-10-28T23:00:14.222512272Z",
+  "summary":  "Zikir ekranında Arapça hattın üst butonlarla çakışmasını önleyen ferah konumlandırma (spacing), güvenlik sıkılaştırması, tam build doğrulaması ve GitHub/Vercel yayın uyumluluğu planı.",
+  "updatedAt":  "2026-10-28T23:34:55.916657783Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

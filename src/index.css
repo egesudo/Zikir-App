@@ -25,6 +25,15 @@
   font-family: var(--font-display);
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 @keyframes floatSlow {
   0%, 100% {
     transform: translateY(0px) translateX(0px);

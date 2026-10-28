@@ -8,9 +8,12 @@ import {
   Palette,
   Clock,
   Wind,
+  Waves,
+  Music,
 } from 'lucide-react';
 import { THEMES, THEME_ORDER, ThemeId } from '../data/dhikrs';
 import { AmbientSoundMode, LastSessionSummary, SettingsState } from '../utils/storage';
+import { pulseAmbientFocusRhythm } from '../utils/sound';
 
 interface SettingsScreenProps {
   settings: SettingsState;
@@ -22,26 +25,35 @@ interface SettingsScreenProps {
   onBackHome: () => void;
 }
 
-const AMBIENT_MODES: { id: AmbientSoundMode; label: string; desc: string }[] = [
+const AMBIENT_MODES: {
+  id: AmbientSoundMode;
+  label: string;
+  desc: string;
+  Icon: React.FC<{ className?: string }>;
+}[] = [
   {
     id: 'river',
     label: 'Huzurlu Şadırvan',
-    desc: 'Huzur veren yumuşak su akışı ve şadırvan şırıltısı',
+    desc: 'Zikir ritmiyle dalgalanan yumuşak şadırvan ve su akışı',
+    Icon: Waves,
   },
   {
     id: 'wind',
     label: 'Esintili Vadi',
-    desc: 'Vadide yavaşça esen dingin sabah rüzgârı',
+    desc: 'Zikir temponuzla uyum içinde esen dingin vadi rüzgârı',
+    Icon: Wind,
   },
   {
     id: 'ney',
     label: 'Hafif Ney',
-    desc: 'Derinden gelen sıcak ney nefesi ve dem sesi',
+    desc: 'Derinden gelen sıcak ney nefesi ve Rast dem tınısı',
+    Icon: Music,
   },
   {
     id: 'auto',
     label: 'Otomatik (Manzaraya Göre)',
-    desc: 'Seçili manzaraya uygun şadırvan, vadi veya ney tınısı',
+    desc: 'Seçili manzaraya uygun şadırvan, vadi veya ney ambiyansı',
+    Icon: Sparkles,
   },
 ];
 
@@ -66,6 +78,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     cosmos: 'linear-gradient(135deg, #14092b 0%, #6b21a8 60%, #c084fc 100%)',
     emerald_lake: 'linear-gradient(135deg, #14532d 0%, #059669 60%, #a7f3d0 100%)',
     painted_valley: 'linear-gradient(135deg, #38bdf8 0%, #84cc16 55%, #f59e0b 100%)',
+  };
+
+  const handleToggleAmbient = () => {
+    const nextEnabled = !settings.ambientEnabled;
+    onUpdateSettings({ ambientEnabled: nextEnabled });
+    if (nextEnabled) {
+      pulseAmbientFocusRhythm(true, settings.ambientMode, settings.themeId);
+    }
+  };
+
+  const handleSelectAmbientMode = (mode: AmbientSoundMode) => {
+    onUpdateSettings({ ambientEnabled: true, ambientMode: mode });
+    pulseAmbientFocusRhythm(true, mode, settings.themeId);
   };
 
   return (
@@ -104,7 +129,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto pr-1">
+          <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-1">
             {THEME_ORDER.map((tId) => {
               const t = THEMES[tId];
               const isSelected = settings.themeId === tId;
@@ -179,8 +204,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </button>
           </div>
 
-          {/* Odak Ritmine Duyarlı Arka Plan Doğa ve Ney Ambiyansı */}
-          <div className="p-3.5 rounded-2xl bg-[#EDE4D3]/80 border border-[#DCCEB6] space-y-3">
+          {/* Zikir Ritmiyle Senkronize Arka Plan Doğa Sesleri (Huzurlu Şadırvan / Esintili Vadi) */}
+          <div className="p-4 rounded-2xl bg-[#EDE4D3]/90 border border-[#DCCEB6] space-y-3">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-[#E2D4BC] flex items-center justify-center shrink-0">
@@ -188,20 +213,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 </div>
                 <div>
                   <div className="text-sm font-semibold text-[#2B2118]">
-                    Arka Plan Doğa ve Ney Ambiyansı
+                    Arka Plan Doğa Sesi (Ritim Senkronlu)
                   </div>
                   <div className="text-xs text-[#6E5D4F]">
-                    Zikir odak ritminize göre ses seviyesini dinamik olarak uyarlar
+                    Zikir çekim ritminizle uyumlu döngüsel doğa ambiyansı
                   </div>
                 </div>
               </div>
               <button
                 type="button"
                 role="switch"
+                aria-label="Arka Plan Doğa Sesi"
                 aria-checked={settings.ambientEnabled}
-                onClick={() =>
-                  onUpdateSettings({ ambientEnabled: !settings.ambientEnabled })
-                }
+                onClick={handleToggleAmbient}
                 className={`min-w-[52px] h-8 rounded-full p-1 transition-colors cursor-pointer flex items-center shrink-0 ${
                   settings.ambientEnabled
                     ? 'bg-[#386B4D] justify-end'
@@ -212,32 +236,39 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </button>
             </div>
 
-            {/* Ambiyans Ses Türü Seçici */}
+            {/* Döngüsel Doğa Sesi Seçenekleri */}
             {settings.ambientEnabled && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                {AMBIENT_MODES.map((m) => {
-                  const active = settings.ambientMode === m.id;
+                {AMBIENT_MODES.map(({ id, label, desc, Icon }) => {
+                  const active = settings.ambientMode === id;
                   return (
                     <button
-                      key={m.id}
+                      key={id}
                       type="button"
-                      onClick={() => onUpdateSettings({ ambientMode: m.id })}
-                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      onClick={() => handleSelectAmbientMode(id)}
+                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                         active
                           ? 'bg-[#E3D3B8] border-[#B87824] shadow-xs'
                           : 'bg-[#F5EFE2] border-[#DCCEB6] hover:bg-[#EAE0CE]'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-1.5">
-                        <span className="text-xs font-semibold text-[#2B2118] truncate">
-                          {m.label}
-                        </span>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Icon
+                            className={`w-4 h-4 shrink-0 ${
+                              active ? 'text-[#386B4D]' : 'text-[#8C6528]'
+                            }`}
+                          />
+                          <span className="text-xs font-semibold text-[#2B2118] truncate">
+                            {label}
+                          </span>
+                        </div>
                         {active && (
                           <Check className="w-3.5 h-3.5 text-[#9E641A] shrink-0" />
                         )}
                       </div>
-                      <p className="text-[11px] text-[#6E5D4F] mt-0.5 line-clamp-1">
-                        {m.desc}
+                      <p className="text-[11px] text-[#6E5D4F] mt-1 line-clamp-1">
+                        {desc}
                       </p>
                     </button>
                   );
