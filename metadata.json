@@ -1,0 +1,6 @@
+{
+  "name": "Allah'a Adım Adım",
+  "description": "Müslümanlığa yeni adım atan ve manevi yaşamında zikre daha fazla yer vermek isteyenler için huzurlu, sade ve ücretsiz dijital tesbih uygulaması.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

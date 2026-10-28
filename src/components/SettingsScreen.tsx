@@ -1,0 +1,348 @@
+import React from 'react';
+import {
+  ArrowLeft,
+  Volume2,
+  Vibrate,
+  Sparkles,
+  Check,
+  Palette,
+  Clock,
+  Wind,
+} from 'lucide-react';
+import { THEMES, THEME_ORDER, ThemeId } from '../data/dhikrs';
+import { AmbientSoundMode, LastSessionSummary, SettingsState } from '../utils/storage';
+
+interface SettingsScreenProps {
+  settings: SettingsState;
+  lastSession: LastSessionSummary | null;
+  currentCount: number;
+  targetCount: number;
+  currentDhikrName: string;
+  onUpdateSettings: (partial: Partial<SettingsState>) => void;
+  onBackHome: () => void;
+}
+
+const AMBIENT_MODES: { id: AmbientSoundMode; label: string; desc: string }[] = [
+  {
+    id: 'river',
+    label: 'Huzurlu Şadırvan',
+    desc: 'Huzur veren yumuşak su akışı ve şadırvan şırıltısı',
+  },
+  {
+    id: 'wind',
+    label: 'Esintili Vadi',
+    desc: 'Vadide yavaşça esen dingin sabah rüzgârı',
+  },
+  {
+    id: 'ney',
+    label: 'Hafif Ney',
+    desc: 'Derinden gelen sıcak ney nefesi ve dem sesi',
+  },
+  {
+    id: 'auto',
+    label: 'Otomatik (Manzaraya Göre)',
+    desc: 'Seçili manzaraya uygun şadırvan, vadi veya ney tınısı',
+  },
+];
+
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({
+  settings,
+  lastSession,
+  currentCount,
+  targetCount,
+  currentDhikrName,
+  onUpdateSettings,
+  onBackHome,
+}) => {
+  const activeTheme = THEMES[settings.themeId] || THEMES.misty_valley;
+  const isDarkText = activeTheme.isDarkText;
+
+  const themeSwatches: Record<ThemeId, string> = {
+    misty_valley: 'linear-gradient(135deg, #fde68a 0%, #84a98c 55%, #354f52 100%)',
+    mosque_courtyard: 'linear-gradient(135deg, #f5ebe0 0%, #b5c9c3 55%, #6b7f5e 100%)',
+    lavender_hills: 'linear-gradient(135deg, #4c1d95 0%, #a855f7 55%, #f59e0b 100%)',
+    meadow: 'linear-gradient(135deg, #7dd3fc 0%, #fef08a 50%, #4ade80 100%)',
+    sunset: 'linear-gradient(135deg, #58355e 0%, #c08497 55%, #fde047 100%)',
+    cosmos: 'linear-gradient(135deg, #14092b 0%, #6b21a8 60%, #c084fc 100%)',
+    emerald_lake: 'linear-gradient(135deg, #14532d 0%, #059669 60%, #a7f3d0 100%)',
+    painted_valley: 'linear-gradient(135deg, #38bdf8 0%, #84cc16 55%, #f59e0b 100%)',
+  };
+
+  return (
+    <main className="relative z-10 min-h-dvh flex flex-col px-5 pt-5 pb-8 max-w-xl mx-auto">
+      {/* Üst Başlık ve Geri Dönüş */}
+      <header className="flex items-center justify-between gap-4 mb-5">
+        <button
+          type="button"
+          onClick={onBackHome}
+          aria-label="Ana ekrana dön"
+          className="min-h-[44px] px-4 py-2 rounded-2xl bg-[#F7F1E5]/90 hover:bg-[#F7F1E5] text-[#2C221A] border border-[#DCCEB6] shadow-sm backdrop-blur-md flex items-center gap-2 text-sm font-medium transition-colors cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4 shrink-0 text-[#6E5D4F]" />
+          <span>Ana Ekran</span>
+        </button>
+
+        <h1
+          className={`font-display text-2xl sm:text-3xl font-semibold ${
+            isDarkText ? 'text-[#231B14]' : 'text-[#FAF5EC] drop-shadow'
+          }`}
+        >
+          Ayarlar
+        </h1>
+
+        <div className="w-24" aria-hidden="true" />
+      </header>
+
+      {/* Sıcak Krem ve Bej Ayarlar Kartı */}
+      <div className="rounded-3xl bg-[#F6F0E4]/95 text-[#2C221A] backdrop-blur-xl border border-[#D8C8B0] p-5 sm:p-6 shadow-[0_18px_42px_rgba(35,25,15,0.22)] space-y-6">
+        {/* 1. Arka Plan ve Huzurlu Ambiyans Seçimi */}
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <Palette className="w-4 h-4 text-[#B87824] shrink-0" />
+            <h2 className="text-sm font-semibold tracking-wide text-[#2B2118]">
+              Huzurlu Manzara ve Ambiyans Seçimi ({THEME_ORDER.length} Manzara)
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto pr-1">
+            {THEME_ORDER.map((tId) => {
+              const t = THEMES[tId];
+              const isSelected = settings.themeId === tId;
+              return (
+                <button
+                  key={tId}
+                  type="button"
+                  onClick={() => onUpdateSettings({ themeId: tId })}
+                  className={`w-full min-h-[56px] p-3 rounded-2xl border text-left flex items-center justify-between gap-3 transition-all cursor-pointer ${
+                    isSelected
+                      ? 'bg-[#E5D7C0] border-[#B87824] shadow-sm'
+                      : 'bg-[#EDE4D3] border-[#DCCEB6] hover:bg-[#E6DBC7]'
+                  }`}
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <span
+                      className="w-10 h-10 rounded-xl shrink-0 border border-[#CBB99E] shadow-inner"
+                      style={{ background: themeSwatches[tId] }}
+                    />
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-[#2B2118] truncate">
+                        {t.name}
+                      </div>
+                      <div className="text-xs text-[#6B5A4B] truncate mt-0.5">
+                        {t.subtitle}
+                      </div>
+                    </div>
+                  </div>
+
+                  {isSelected && (
+                    <span className="w-6 h-6 rounded-full bg-[#B87824] text-[#FAF5EC] flex items-center justify-center shrink-0">
+                      <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <div className="h-px bg-[#DFD2BC]" />
+
+        {/* 2. Ses, Doğa Ambiyansı, Titreşim ve Animasyon Tercihleri */}
+        <section className="space-y-3.5">
+          {/* Tesbih Dokunuş Sesi */}
+          <div className="flex items-center justify-between gap-4 py-1.5">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#EAE0CE] flex items-center justify-center shrink-0">
+                <Volume2 className="w-4 h-4 text-[#B87824]" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-[#2B2118]">
+                  Doğal Ahşap Tesbih Sesi
+                </div>
+                <div className="text-xs text-[#6E5D4F]">
+                  Her zikirde tok ahşap boncuk dokunuşu ve hafif ney tınısı
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={settings.soundEnabled}
+              onClick={() => onUpdateSettings({ soundEnabled: !settings.soundEnabled })}
+              className={`min-w-[52px] h-8 rounded-full p-1 transition-colors cursor-pointer flex items-center ${
+                settings.soundEnabled
+                  ? 'bg-[#386B4D] justify-end'
+                  : 'bg-[#D6C7AE] justify-start'
+              }`}
+            >
+              <span className="w-6 h-6 rounded-full bg-[#FAF5EC] shadow-sm" />
+            </button>
+          </div>
+
+          {/* Odak Ritmine Duyarlı Arka Plan Doğa ve Ney Ambiyansı */}
+          <div className="p-3.5 rounded-2xl bg-[#EDE4D3]/80 border border-[#DCCEB6] space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#E2D4BC] flex items-center justify-center shrink-0">
+                  <Wind className="w-4 h-4 text-[#386B4D]" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-[#2B2118]">
+                    Arka Plan Doğa ve Ney Ambiyansı
+                  </div>
+                  <div className="text-xs text-[#6E5D4F]">
+                    Zikir odak ritminize göre ses seviyesini dinamik olarak uyarlar
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={settings.ambientEnabled}
+                onClick={() =>
+                  onUpdateSettings({ ambientEnabled: !settings.ambientEnabled })
+                }
+                className={`min-w-[52px] h-8 rounded-full p-1 transition-colors cursor-pointer flex items-center shrink-0 ${
+                  settings.ambientEnabled
+                    ? 'bg-[#386B4D] justify-end'
+                    : 'bg-[#D6C7AE] justify-start'
+                }`}
+              >
+                <span className="w-6 h-6 rounded-full bg-[#FAF5EC] shadow-sm" />
+              </button>
+            </div>
+
+            {/* Ambiyans Ses Türü Seçici */}
+            {settings.ambientEnabled && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                {AMBIENT_MODES.map((m) => {
+                  const active = settings.ambientMode === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => onUpdateSettings({ ambientMode: m.id })}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        active
+                          ? 'bg-[#E3D3B8] border-[#B87824] shadow-xs'
+                          : 'bg-[#F5EFE2] border-[#DCCEB6] hover:bg-[#EAE0CE]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="text-xs font-semibold text-[#2B2118] truncate">
+                          {m.label}
+                        </span>
+                        {active && (
+                          <Check className="w-3.5 h-3.5 text-[#9E641A] shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-[11px] text-[#6E5D4F] mt-0.5 line-clamp-1">
+                        {m.desc}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Titreşim (Haptik) */}
+          <div className="flex items-center justify-between gap-4 py-1.5">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#EAE0CE] flex items-center justify-center shrink-0">
+                <Vibrate className="w-4 h-4 text-[#B87824]" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-[#2B2118]">Titreşim Desteği</div>
+                <div className="text-xs text-[#6E5D4F]">
+                  Destekleyen cihazlarda nazik dokunsal geri bildirim
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={settings.vibrationEnabled}
+              onClick={() =>
+                onUpdateSettings({ vibrationEnabled: !settings.vibrationEnabled })
+              }
+              className={`min-w-[52px] h-8 rounded-full p-1 transition-colors cursor-pointer flex items-center ${
+                settings.vibrationEnabled
+                  ? 'bg-[#386B4D] justify-end'
+                  : 'bg-[#D6C7AE] justify-start'
+              }`}
+            >
+              <span className="w-6 h-6 rounded-full bg-[#FAF5EC] shadow-sm" />
+            </button>
+          </div>
+
+          {/* Animasyon Yoğunluğunu Azaltma */}
+          <div className="flex items-center justify-between gap-4 py-1.5">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#EAE0CE] flex items-center justify-center shrink-0">
+                <Sparkles className="w-4 h-4 text-[#B87824]" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-[#2B2118]">
+                  Animasyon Yoğunluğunu Azalt
+                </div>
+                <div className="text-xs text-[#6E5D4F]">
+                  Arka plan ambiyans hareketlerini ve boncuk kaymasını sadeleştirir
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={settings.reducedMotion}
+              onClick={() =>
+                onUpdateSettings({ reducedMotion: !settings.reducedMotion })
+              }
+              className={`min-w-[52px] h-8 rounded-full p-1 transition-colors cursor-pointer flex items-center ${
+                settings.reducedMotion
+                  ? 'bg-[#386B4D] justify-end'
+                  : 'bg-[#D6C7AE] justify-start'
+              }`}
+            >
+              <span className="w-6 h-6 rounded-full bg-[#FAF5EC] shadow-sm" />
+            </button>
+          </div>
+        </section>
+
+        <div className="h-px bg-[#DFD2BC]" />
+
+        {/* 3. Son Oturum Bilgisi */}
+        <section>
+          <div className="flex items-center gap-2 mb-2">
+            <Clock className="w-4 h-4 text-[#B87824] shrink-0" />
+            <h2 className="text-sm font-semibold tracking-wide text-[#2B2118]">
+              Son Oturum Bilgisi
+            </h2>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-[#EDE4D3] border border-[#DCCEB6] text-xs text-[#4A3C30] space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[#6E5D4F]">Mevcut Oturum:</span>
+              <span className="font-semibold text-[#2B2118] tabular-nums">
+                {currentDhikrName} · {currentCount} / {targetCount}
+              </span>
+            </div>
+
+            {lastSession ? (
+              <div className="flex items-center justify-between pt-1.5 border-t border-[#DCCEB6]">
+                <span className="text-[#6E5D4F]">Son Tamamlanan:</span>
+                <span className="font-semibold text-[#386B4D] tabular-nums">
+                  {lastSession.dhikrName} · {lastSession.count} / {lastSession.target}
+                </span>
+              </div>
+            ) : (
+              <div className="text-[#7E6C5B] pt-1.5 border-t border-[#DCCEB6]">
+                Henüz tamamlanmış bir zikir oturumu kaydedilmedi.
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+};
