@@ -7,6 +7,10 @@ export type AmbientSoundMode =
   | 'night'
   | 'wind'
   | 'river'
+  | 'mountain_wind'
+  | 'autumn_leaves'
+  | 'ocean_waves'
+  | 'winter_breeze'
   | 'ney';
 
 export const AMBIENT_MODE_ORDER: AmbientSoundMode[] = [
@@ -16,6 +20,10 @@ export const AMBIENT_MODE_ORDER: AmbientSoundMode[] = [
   'night',
   'wind',
   'river',
+  'mountain_wind',
+  'autumn_leaves',
+  'ocean_waves',
+  'winter_breeze',
   'ney',
 ];
 
@@ -26,6 +34,10 @@ export const AMBIENT_MODE_LABELS: Record<AmbientSoundMode, string> = {
   night: 'Gece Böcekleri ve Sükûnet',
   wind: 'Esintili Vadi ve Su Sesi',
   river: 'Hafif Su Dalgası ve Şadırvan',
+  mountain_wind: 'Zirve Esintisi ve Bulut Denizi',
+  autumn_leaves: 'Sonbahar Yaprak Hışırtısı ve Esinti',
+  ocean_waves: 'Sakin Kıyı Dalgaları ve Martılar',
+  winter_breeze: 'Karlı Kış Sabahı ve Kristal Esinti',
   ney: 'Hafif Ney Tefekkürü',
 };
 
@@ -67,6 +79,10 @@ const VALID_AMBIENT_MODES: AmbientSoundMode[] = [
   'night',
   'wind',
   'river',
+  'mountain_wind',
+  'autumn_leaves',
+  'ocean_waves',
+  'winter_breeze',
   'ney',
 ];
 
@@ -93,7 +109,7 @@ export const DEFAULT_SETTINGS: SettingsState = {
   soundEnabled: true,
   ambientEnabled: true,
   ambientMode: 'auto',
-  ambientVolume: 0.35,
+  ambientVolume: 0.65,
   vibrationEnabled: true,
   reducedMotion: false,
 };
@@ -197,7 +213,7 @@ export function loadSettingsState(): SettingsState {
       soundEnabled: typeof parsed.soundEnabled === 'boolean' ? parsed.soundEnabled : true,
       ambientEnabled: typeof parsed.ambientEnabled === 'boolean' ? parsed.ambientEnabled : true,
       ambientMode,
-      ambientVolume: sanitizeVolume(parsed.ambientVolume, 0.35),
+      ambientVolume: sanitizeVolume(parsed.ambientVolume, 0.65),
       vibrationEnabled:
         typeof parsed.vibrationEnabled === 'boolean' ? parsed.vibrationEnabled : true,
       reducedMotion: typeof parsed.reducedMotion === 'boolean' ? parsed.reducedMotion : false,

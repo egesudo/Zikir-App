@@ -38,15 +38,8 @@ export const AmbianceModal: React.FC<AmbianceModalProps> = ({
   if (!isOpen) return null;
 
   const handleSelectTheme = (themeId: ThemeId) => {
-    onUpdateSettings({ themeId });
-    if (settings.ambientEnabled) {
-      pulseAmbientFocusRhythm(
-        true,
-        settings.ambientMode,
-        themeId,
-        settings.ambientVolume
-      );
-    }
+    onUpdateSettings({ themeId, ambientMode: 'auto', ambientEnabled: true });
+    pulseAmbientFocusRhythm(true, 'auto', themeId, settings.ambientVolume);
   };
 
   const handleToggleAmbient = () => {

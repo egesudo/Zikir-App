@@ -15,7 +15,11 @@ export type ThemeId =
   | 'sunrise'
   | 'sunset'
   | 'moonlit_nature'
-  | 'peaceful_garden';
+  | 'peaceful_garden'
+  | 'misty_mountain'
+  | 'autumn_breeze'
+  | 'calm_seashore'
+  | 'snowy_winter';
 
 export interface BeadColorStop {
   name: string;
@@ -391,6 +395,163 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
       },
     ],
   },
+  misty_mountain: {
+    id: 'misty_mountain',
+    name: 'Sisli Dağ Zirvesi',
+    englishName: 'Misty Mountain',
+    subtitle: 'Katmanlı dağ zirveleri, süzülen bulut denizi, nefes alan vadi sisi ve şafak ışığı',
+    soundDescription: 'Yüksek zirve esintisi ve sakin vadi yankısı',
+    swatch: 'linear-gradient(135deg, #1e293b 0%, #64748b 52%, #fcd34d 100%)',
+    isDarkText: false,
+    accentColor: '#fcd34d',
+    ringGradientStart: '#fcd34d',
+    ringGradientEnd: '#93c5fd',
+    buttonBg: 'from-slate-800/90 to-indigo-950/90',
+    buttonText: 'text-white',
+    beadStyle: 'lavender_amethyst',
+    beads: [
+      {
+        name: 'Dağ Kuvarsı',
+        base: '#cbd5e1',
+        highlight: '#ffffff',
+        shadow: '#334155',
+        glow: 'rgba(203, 213, 225, 0.65)',
+        faceted: true,
+      },
+      {
+        name: 'Zirve Kehribarı',
+        base: '#f59e0b',
+        highlight: '#fef3c7',
+        shadow: '#78350f',
+        glow: 'rgba(245, 158, 11, 0.6)',
+      },
+      {
+        name: 'Vadi Safiri',
+        base: '#60a5fa',
+        highlight: '#e0f2fe',
+        shadow: '#1e3a8a',
+        glow: 'rgba(96, 165, 250, 0.6)',
+        faceted: true,
+      },
+    ],
+  },
+  autumn_breeze: {
+    id: 'autumn_breeze',
+    name: 'Sonbahar Esintisi',
+    englishName: 'Autumn Breeze',
+    subtitle: 'Altın ve kızıl akçaağaç yaprakları, sıcak sonbahar güneşi ve dingin esinti',
+    soundDescription: 'Yaprak hışırtısı, ılık rüzgâr ve orman kuşları',
+    swatch: 'linear-gradient(135deg, #fef3c7 0%, #f59e0b 52%, #b45309 100%)',
+    isDarkText: true,
+    accentColor: '#b45309',
+    ringGradientStart: '#f59e0b',
+    ringGradientEnd: '#dc2626',
+    buttonBg: 'from-amber-800/90 to-orange-900/90',
+    buttonText: 'text-white',
+    beadStyle: 'olive_amber',
+    beads: [
+      {
+        name: 'Akçaağaç Kehribarı',
+        base: '#d97706',
+        highlight: '#fef3c7',
+        shadow: '#78350f',
+        glow: 'rgba(217, 119, 6, 0.6)',
+        woodGrain: true,
+      },
+      {
+        name: 'Kızıl Yaprak',
+        base: '#dc2626',
+        highlight: '#fee2e2',
+        shadow: '#7f1d1d',
+        glow: 'rgba(220, 38, 38, 0.55)',
+      },
+      {
+        name: 'Tarçın Ağacı',
+        base: '#92400e',
+        highlight: '#fde68a',
+        shadow: '#451a03',
+        glow: 'rgba(146, 64, 14, 0.6)',
+        woodGrain: true,
+      },
+    ],
+  },
+  calm_seashore: {
+    id: 'calm_seashore',
+    name: 'Sakin Deniz Kıyısı',
+    englishName: 'Calm Seashore',
+    subtitle: 'Turkuaz kıyı suları, ritmik köpüklü dalgalar, güneş parıltıları ve süzülen martılar',
+    soundDescription: 'Kıyıya vuran sakin dalgalar ve deniz esintisi',
+    swatch: 'linear-gradient(135deg, #bae6fd 0%, #38bdf8 50%, #0d9488 100%)',
+    isDarkText: true,
+    accentColor: '#0284c7',
+    ringGradientStart: '#0ea5e9',
+    ringGradientEnd: '#14b8a6',
+    buttonBg: 'from-sky-700/90 to-teal-800/90',
+    buttonText: 'text-white',
+    beadStyle: 'sandstone_pearl',
+    beads: [
+      {
+        name: 'Deniz Köpüğü İncisi',
+        base: '#f0f9ff',
+        highlight: '#ffffff',
+        shadow: '#0369a1',
+        glow: 'rgba(240, 249, 255, 0.65)',
+      },
+      {
+        name: 'Akdeniz Turkuazı',
+        base: '#06b6d4',
+        highlight: '#cffafe',
+        shadow: '#155e75',
+        glow: 'rgba(6, 182, 212, 0.6)',
+      },
+      {
+        name: 'Sahil Kehribarı',
+        base: '#f59e0b',
+        highlight: '#fef3c7',
+        shadow: '#78350f',
+        glow: 'rgba(245, 158, 11, 0.55)',
+      },
+    ],
+  },
+  snowy_winter: {
+    id: 'snowy_winter',
+    name: 'Karlı Kış Sabahı',
+    englishName: 'Snowy Winter',
+    subtitle: 'Karla örtülü sakin çam tepeleri, süzülen kar taneleri ve berrak kış sabahı ışığı',
+    soundDescription: 'Yumuşak kış esintisi ve kristal kar sükûneti',
+    swatch: 'linear-gradient(135deg, #e0f2fe 0%, #cbd5e1 52%, #93c5fd 100%)',
+    isDarkText: true,
+    accentColor: '#2563eb',
+    ringGradientStart: '#3b82f6',
+    ringGradientEnd: '#38bdf8',
+    buttonBg: 'from-slate-700/90 to-sky-900/90',
+    buttonText: 'text-white',
+    beadStyle: 'pastel_pearls',
+    beads: [
+      {
+        name: 'Kış İncisi',
+        base: '#f8fafc',
+        highlight: '#ffffff',
+        shadow: '#64748b',
+        glow: 'rgba(248, 250, 252, 0.7)',
+      },
+      {
+        name: 'Buz Kristali',
+        base: '#60a5fa',
+        highlight: '#eff6ff',
+        shadow: '#1e3a8a',
+        glow: 'rgba(96, 165, 250, 0.6)',
+        faceted: true,
+      },
+      {
+        name: 'Gümüş Çam',
+        base: '#34d399',
+        highlight: '#ecfdf5',
+        shadow: '#065f46',
+        glow: 'rgba(52, 211, 153, 0.55)',
+      },
+    ],
+  },
 };
 
 export const THEME_ORDER: ThemeId[] = [
@@ -401,6 +562,10 @@ export const THEME_ORDER: ThemeId[] = [
   'sunset',
   'moonlit_nature',
   'peaceful_garden',
+  'misty_mountain',
+  'autumn_breeze',
+  'calm_seashore',
+  'snowy_winter',
 ];
 
 export const PRESET_TARGETS = [33, 99, 100];

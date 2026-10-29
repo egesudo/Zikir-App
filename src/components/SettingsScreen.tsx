@@ -163,15 +163,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   key={tId}
                   type="button"
                   onClick={() => {
-                    onUpdateSettings({ themeId: tId });
-                    if (settings.ambientEnabled) {
-                      pulseAmbientFocusRhythm(
-                        true,
-                        settings.ambientMode,
-                        tId,
-                        settings.ambientVolume
-                      );
-                    }
+                    onUpdateSettings({ themeId: tId, ambientMode: 'auto', ambientEnabled: true });
+                    pulseAmbientFocusRhythm(
+                      true,
+                      'auto',
+                      tId,
+                      settings.ambientVolume
+                    );
                   }}
                   className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between gap-3 transition-all cursor-pointer ${
                     isSelected

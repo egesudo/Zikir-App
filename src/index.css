@@ -112,6 +112,89 @@
   }
 }
 
+/* 1. Süzülen Yapraklar ve Çiçek Taç Yaprakları */
+@keyframes leafDrift {
+  0% {
+    transform: translate(0px, -12px) rotate(-12deg) scale(0.92);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.78;
+  }
+  50% {
+    transform: translate(24px, 38px) rotate(16deg) scale(1.03);
+    opacity: 0.85;
+  }
+  80% {
+    opacity: 0.65;
+  }
+  100% {
+    transform: translate(-8px, 88px) rotate(-8deg) scale(0.9);
+    opacity: 0;
+  }
+}
+
+/* 2. Ufukta Nefes Alan Sis ve Işık Huzmeleri */
+@keyframes mistBreathe {
+  0%, 100% {
+    transform: translateX(-14px) scaleX(0.96) scaleY(0.94);
+    opacity: 0.24;
+  }
+  50% {
+    transform: translateX(14px) scaleX(1.06) scaleY(1.08);
+    opacity: 0.54;
+  }
+}
+
+@keyframes sunbeamBreathe {
+  0%, 100% {
+    transform: rotate(-1.8deg) scaleX(0.94);
+    opacity: 0.22;
+  }
+  50% {
+    transform: rotate(1.8deg) scaleX(1.08);
+    opacity: 0.52;
+  }
+}
+
+/* 3. Su Yüzeyinde Genişleyen Halkalar ve Yansımalar */
+@keyframes rippleExpand {
+  0% {
+    transform: scale(0.45);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.62;
+  }
+  100% {
+    transform: scale(1.65);
+    opacity: 0;
+  }
+}
+
+@keyframes waterShimmer {
+  0%, 100% {
+    transform: translateX(-6px) scaleX(0.92);
+    opacity: 0.32;
+  }
+  50% {
+    transform: translateX(6px) scaleX(1.08);
+    opacity: 0.68;
+  }
+}
+
+/* 4. Gece Temalarında Yumuşak Kutup Işığı (Aurora) Dalgalanması */
+@keyframes auroraWave {
+  0%, 100% {
+    transform: translateY(0px) skewX(-6deg) scaleY(0.94);
+    opacity: 0.24;
+  }
+  50% {
+    transform: translateY(-10px) skewX(6deg) scaleY(1.1);
+    opacity: 0.52;
+  }
+}
+
 @keyframes moteFloat {
   0%, 100% {
     transform: translateY(0px) translateX(0px) scale(0.95);
@@ -186,6 +269,74 @@
   }
 }
 
+/* 5. Sisli Dağ Zirvesi — Bulut Denizi Akışı */
+@keyframes cloudSeaFlow {
+  0%, 100% {
+    transform: translateX(-18px) translateY(0px) scaleX(0.98);
+    opacity: 0.62;
+  }
+  50% {
+    transform: translateX(18px) translateY(-6px) scaleX(1.04);
+    opacity: 0.88;
+  }
+}
+
+/* 6. Sonbahar Esintisi — Savrulan Altın Yapraklar */
+@keyframes autumnLeafFall {
+  0% {
+    transform: translate(-10px, -16px) rotate(-18deg) scale(0.92);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.88;
+  }
+  55% {
+    transform: translate(32px, 46px) rotate(22deg) scale(1.04);
+    opacity: 0.92;
+  }
+  85% {
+    opacity: 0.72;
+  }
+  100% {
+    transform: translate(8px, 105px) rotate(-12deg) scale(0.9);
+    opacity: 0;
+  }
+}
+
+/* 7. Sakin Deniz Kıyısı — Kıyıya Vuran Köpüklü Dalgalar */
+@keyframes shoreWaveRoll {
+  0%, 100% {
+    transform: translateY(0px) scaleY(0.94);
+    opacity: 0.42;
+  }
+  50% {
+    transform: translateY(-10px) scaleY(1.08);
+    opacity: 0.82;
+  }
+}
+
+/* 8. Karlı Kış Sabahı — Süzülen Kristal Kar Taneleri */
+@keyframes winterSnowDrift {
+  0% {
+    transform: translate(0px, -14px) rotate(0deg) scale(0.9);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.85;
+  }
+  50% {
+    transform: translate(16px, 42px) rotate(45deg) scale(1.05);
+    opacity: 0.9;
+  }
+  85% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate(-8px, 96px) rotate(90deg) scale(0.92);
+    opacity: 0;
+  }
+}
+
 .animate-float-slow {
   animation: floatSlow 9s ease-in-out infinite;
 }
@@ -218,6 +369,47 @@
 
 .animate-water-ripple {
   animation: waterRipple 6.5s ease-in-out infinite;
+}
+
+.animate-leaf-drift {
+  animation: leafDrift 14s ease-in-out infinite;
+}
+
+.animate-mist-breathe {
+  animation: mistBreathe 13s ease-in-out infinite;
+}
+
+.animate-sunbeam-breathe {
+  transform-origin: top center;
+  animation: sunbeamBreathe 11s ease-in-out infinite;
+}
+
+.animate-ripple-expand {
+  animation: rippleExpand 7.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+.animate-water-shimmer {
+  animation: waterShimmer 8s ease-in-out infinite;
+}
+
+.animate-aurora-wave {
+  animation: auroraWave 16s ease-in-out infinite;
+}
+
+.animate-cloud-sea {
+  animation: cloudSeaFlow 15s ease-in-out infinite;
+}
+
+.animate-autumn-leaf {
+  animation: autumnLeafFall 13s ease-in-out infinite;
+}
+
+.animate-shore-wave {
+  animation: shoreWaveRoll 7.2s ease-in-out infinite;
+}
+
+.animate-winter-snow {
+  animation: winterSnowDrift 12s ease-in-out infinite;
 }
 
 .animate-mote {
@@ -258,6 +450,16 @@
   .animate-sunrise-cycle,
   .animate-sunset-descent,
   .animate-water-ripple,
+  .animate-leaf-drift,
+  .animate-mist-breathe,
+  .animate-sunbeam-breathe,
+  .animate-ripple-expand,
+  .animate-water-shimmer,
+  .animate-aurora-wave,
+  .animate-cloud-sea,
+  .animate-autumn-leaf,
+  .animate-shore-wave,
+  .animate-winter-snow,
   .animate-mote,
   .animate-twinkle,
   .animate-butterfly,

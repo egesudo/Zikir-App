@@ -39,6 +39,7 @@ export default function App() {
   const [settings, setSettings] = useState<SettingsState>(() => loadSettingsState());
   const [isGoalModalOpen, setIsGoalModalOpen] = useState<boolean>(false);
   const [isAmbianceModalOpen, setIsAmbianceModalOpen] = useState<boolean>(false);
+  const [rhythmTempoScale, setRhythmTempoScale] = useState<number>(0.92);
 
   // Oturum değişikliklerini localStorage'a kaydet
   useEffect(() => {
@@ -55,6 +56,17 @@ export default function App() {
       settings.ambientVolume
     );
   }, [settings]);
+
+  // Zikir yapılmadığında görsel 'Ritim Senkronizasyonu' ivmesini yumuşakça dinlenme hızına (0.90x) çek
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setRhythmTempoScale((prev) => {
+        if (prev <= 0.92) return 0.9;
+        return Number((prev - 0.03).toFixed(3));
+      });
+    }, 1400);
+    return () => window.clearInterval(timer);
+  }, []);
 
   // Unmount durumunda ses döngüsünü temizle
   useEffect(() => {
@@ -84,9 +96,9 @@ export default function App() {
     }
   };
 
-  // Zikir Sayacını Artırma ve Odak Ritmine Göre Ambiyans Sesini Uyarlama
+  // Zikir Sayacını Artırma, Ses ve Görsel Ritim Senkronizasyonunu Uyarlama
   const handleIncrement = useCallback(() => {
-    pulseAmbientFocusRhythm(
+    const emaAudioScale = pulseAmbientFocusRhythm(
       settings.ambientEnabled,
       settings.ambientMode,
       settings.themeId,
@@ -101,6 +113,11 @@ export default function App() {
       const nextCount = prev.currentCount + 1;
       const reachedGoal = nextCount >= prev.targetCount;
       const isNisaneDivider = nextCount % 11 === 0;
+
+      // Zikir ilerledikçe (nextCount / targetCount) ve EMA hızı arttıkça sakinleştirici ivme (0.90x -> 1.42x)
+      const progressBoost = Math.min(0.16, (nextCount / Math.max(1, prev.targetCount)) * 0.16);
+      const nextVisualScale = Math.min(1.42, Number((emaAudioScale + progressBoost).toFixed(3)));
+      setRhythmTempoScale(nextVisualScale);
 
       if (reachedGoal) {
         playCompletionChime(settings.soundEnabled);
@@ -145,6 +162,7 @@ export default function App() {
       settings.themeId,
       settings.ambientVolume
     );
+    setRhythmTempoScale(0.92);
     setSession((prev) => ({
       ...prev,
       selectedDhikrId: dhikrId,
@@ -158,6 +176,7 @@ export default function App() {
 
   // Mevcut Zikri Sıfırlama
   const handleResetSession = () => {
+    setRhythmTempoScale(0.92);
     setSession((prev) => ({
       ...prev,
       currentCount: 0,
@@ -167,6 +186,7 @@ export default function App() {
 
   // Tamamlanma ekranından "Sıradaki Zikre Geç"
   const handleStartNextDhikr = () => {
+    setRhythmTempoScale(0.92);
     setSession((prev) => ({
       ...prev,
       selectedDhikrId: nextDhikr.id,
@@ -217,10 +237,11 @@ export default function App() {
 
   return (
     <div className="relative min-h-dvh w-full overflow-x-hidden">
-      {/* Seçilen Temanın Görsel ve Atmosferik Arka Planı */}
+      {/* Seçilen Temanın Görsel ve Ritim Senkronlu Atmosferik Arka Planı */}
       <SceneBackground
         themeId={settings.themeId}
         reducedMotion={settings.reducedMotion}
+        rhythmTempoScale={rhythmTempoScale}
       />
 
       {/* Ekran Geçişleri */}

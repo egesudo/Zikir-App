@@ -1,6 +1,6 @@
 {
-  "summary":  "Mevcut 'Allah'a Adım Adım' uygulamasına 7 dinamik ve animasyonlu huzur ambiyans temasının (Nature, Rainy, Night, Sunrise, Sunset, Moonlit Nature, Peaceful Garden), sekme görünürlüğü ve reduced-motion duyarlı animasyon motorunun, bağımsız ses seviyesi kontrollü tema seslerinin ve önizleme kartlı ambiyans seçicinin entegrasyon planı.",
-  "updatedAt":  "2026-10-28T23:58:46.047501862Z",
+  "summary":  "Implementation plan for adding 4 new peaceful animated background themes (Misty Mountain Peak, Autumn Breeze, Calm Seashore, Snowy Winter Morning) with custom Web Audio API nature soundscapes and EMA rhythm synchronization.",
+  "updatedAt":  "2026-10-29T15:50:03.914852101Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

@@ -4,12 +4,35 @@ import { ThemeId } from '../data/dhikrs';
 interface SceneBackgroundProps {
   themeId: ThemeId;
   reducedMotion: boolean;
+  rhythmTempoScale?: number;
 }
 
-export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reducedMotion }) => {
+export const SceneBackground: React.FC<SceneBackgroundProps> = ({
+  themeId,
+  reducedMotion,
+  rhythmTempoScale = 1,
+}) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const rhythmScaleRef = useRef<number>(rhythmTempoScale);
   const [isTabHidden, setIsTabHidden] = useState<boolean>(false);
   const [osReducedMotion, setOsReducedMotion] = useState<boolean>(false);
+
+  // Zikir hızına göre CSS animasyonlarının (yapraklar, su, ışık, bulut) hızını sıçramasız güncelle
+  useEffect(() => {
+    const clampedScale = Math.min(1.5, Math.max(0.75, rhythmTempoScale));
+    rhythmScaleRef.current = clampedScale;
+
+    if (typeof Element === 'undefined' || !containerRef.current) return;
+    try {
+      const animations = containerRef.current.getAnimations({ subtree: true });
+      animations.forEach((anim) => {
+        anim.playbackRate = clampedScale;
+      });
+    } catch {
+      // Desteklemeyen eski tarayıcılarda varsayılan hızda devam et
+    }
+  }, [rhythmTempoScale, themeId]);
 
   // Sekme arka plana geçtiğinde veya OS reduced-motion aktif olduğunda animasyonları duraklat
   useEffect(() => {
@@ -37,7 +60,7 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
 
   const isMotionPaused = reducedMotion || osReducedMotion || isTabHidden;
 
-  // Performans dostu requestAnimationFrame çevresel atmosfer katmanı (Yağmur damlaları, ateş böcekleri, polen/ışık zerreleri)
+  // Performans dostu requestAnimationFrame çevresel atmosfer katmanı
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -63,7 +86,6 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
       };
     }
 
-    // Temaya göre hafif parçacık havuzu (Mobil pil dostu düşük yoğunluk: 14-26 adet)
     interface Particle {
       x: number;
       y: number;
@@ -72,13 +94,12 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
       size: number;
       alpha: number;
       phase: number;
-      kind: 'rain' | 'glass_drop' | 'firefly' | 'mote';
+      kind: 'rain' | 'glass_drop' | 'firefly' | 'mote' | 'snow' | 'sea_sparkle' | 'autumn_mote';
     }
 
     const particles: Particle[] = [];
 
     if (themeId === 'rainy') {
-      // İnce yağmur çizgileri (24 adet) + camda yavaşça süzülen su damlaları (8 adet)
       for (let i = 0; i < 24; i++) {
         particles.push({
           x: Math.random() * width,
@@ -103,8 +124,46 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
           kind: 'glass_drop',
         });
       }
+    } else if (themeId === 'snowy_winter') {
+      for (let i = 0; i < 28; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 0.28,
+          vy: 0.42 + Math.random() * 0.55,
+          size: 1.8 + Math.random() * 2.4,
+          alpha: 0.42 + Math.random() * 0.42,
+          phase: Math.random() * Math.PI * 2,
+          kind: 'snow',
+        });
+      }
+    } else if (themeId === 'calm_seashore') {
+      for (let i = 0; i < 16; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: height * 0.48 + Math.random() * (height * 0.46),
+          vx: (Math.random() - 0.5) * 0.14,
+          vy: (Math.random() - 0.5) * 0.08,
+          size: 1.5 + Math.random() * 1.8,
+          alpha: 0.28 + Math.random() * 0.45,
+          phase: Math.random() * Math.PI * 2,
+          kind: 'sea_sparkle',
+        });
+      }
+    } else if (themeId === 'autumn_breeze') {
+      for (let i = 0; i < 16; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: 0.24 + Math.random() * 0.26,
+          vy: 0.22 + Math.random() * 0.28,
+          size: 1.8 + Math.random() * 1.7,
+          alpha: 0.26 + Math.random() * 0.42,
+          phase: Math.random() * Math.PI * 2,
+          kind: 'autumn_mote',
+        });
+      }
     } else if (themeId === 'night' || themeId === 'moonlit_nature') {
-      // Çok hafif ateş böcekleri ve ay ışığı zerrecikleri (14 adet)
       for (let i = 0; i < 14; i++) {
         particles.push({
           x: Math.random() * width,
@@ -118,7 +177,6 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
         });
       }
     } else {
-      // Doğa, Gün Doğumu, Gün Batımı, Huzurlu Bahçe: yumuşak gün ışığı parçacıkları (14 adet)
       for (let i = 0; i < 14; i++) {
         particles.push({
           x: Math.random() * width,
@@ -136,7 +194,9 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
     let lastTime = performance.now();
 
     const render = (now: number) => {
-      const dt = Math.min(32, now - lastTime) / 16.67;
+      const baseDt = Math.min(32, now - lastTime) / 16.67;
+      // Ritim Senkronizasyonu: Zikir hızı ve sayısı arttıkça parçacıklar sakinleştirici bir ivme kazanır
+      const dt = baseDt * rhythmScaleRef.current;
       lastTime = now;
 
       ctx.clearRect(0, 0, width, height);
@@ -169,6 +229,43 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
           }
 
           ctx.fillStyle = `rgba(241, 245, 249, ${p.alpha})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (p.kind === 'snow') {
+          p.x += (p.vx + Math.sin(p.phase * 0.85) * 0.26) * dt;
+          p.y += p.vy * dt;
+          if (p.y > height + 12) {
+            p.y = -10;
+            p.x = Math.random() * width;
+          }
+          if (p.x < -10) p.x = width + 10;
+          if (p.x > width + 10) p.x = -10;
+
+          const snowAlpha = p.alpha * (0.65 + 0.35 * Math.sin(p.phase));
+          ctx.fillStyle = `rgba(255, 255, 255, ${snowAlpha})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (p.kind === 'sea_sparkle') {
+          p.x += (p.vx + Math.sin(p.phase) * 0.14) * dt;
+          p.y += p.vy * dt;
+          const sparkleAlpha = p.alpha * Math.pow(0.5 + 0.5 * Math.sin(p.phase * 1.4), 2);
+          ctx.fillStyle = `rgba(240, 253, 250, ${sparkleAlpha})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * (0.8 + 0.35 * Math.sin(p.phase)), 0, Math.PI * 2);
+          ctx.fill();
+        } else if (p.kind === 'autumn_mote') {
+          p.x += (p.vx + Math.sin(p.phase) * 0.18) * dt;
+          p.y += p.vy * dt;
+          if (p.y > height + 12) {
+            p.y = -10;
+            p.x = Math.random() * width;
+          }
+          if (p.x > width + 12) p.x = -10;
+
+          const goldAlpha = p.alpha * (0.55 + 0.45 * Math.sin(p.phase));
+          ctx.fillStyle = `rgba(251, 191, 36, ${goldAlpha})`;
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
           ctx.fill();
@@ -219,12 +316,13 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
 
   return (
     <div
+      ref={containerRef}
       className={`fixed inset-0 pointer-events-none overflow-hidden z-0 select-none transition-colors duration-700 ${
         isMotionPaused ? 'animations-paused' : ''
       }`}
       aria-hidden="true"
     >
-      {/* A. NATURE — DOĞA (Yeşil tepeler, ağaçlar, rüzgârla salınan çimenler, kuşlar ve yumuşak güneş) */}
+      {/* A. NATURE — DOĞA (Yeşil tepeler, nefes alan ışık huzmeleri, süzülen yapraklar ve ufuk sisi) */}
       {themeId === 'nature' && (
         <div className="absolute inset-0 bg-gradient-to-b from-[#bae6fd] via-[#e0f2fe] to-[#fef9c3]">
           <svg
@@ -238,10 +336,23 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
                 <stop offset="45%" stopColor="#fef08a" stopOpacity="0.55" />
                 <stop offset="100%" stopColor="#bae6fd" stopOpacity="0" />
               </radialGradient>
+              <linearGradient id="natureBeam" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#fffbeb" stopOpacity="0.45" />
+                <stop offset="100%" stopColor="#fef9c3" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient id="natureMist" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
+                <stop offset="50%" stopColor="#ffffff" stopOpacity="0.55" />
+                <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+              </linearGradient>
             </defs>
 
-            {/* Yumuşak Güneş Işığı */}
+            {/* Yumuşak Güneş ve Nefes Alan Işık Huzmeleri */}
             <circle cx="310" cy="145" r="175" fill="url(#natureSun)" className="animate-pulse-soft" />
+            <g className="animate-sunbeam-breathe" style={{ transformOrigin: '310px 145px' }}>
+              <polygon points="310,145 140,620 220,620" fill="url(#natureBeam)" />
+              <polygon points="310,145 245,620 335,620" fill="url(#natureBeam)" />
+            </g>
             <circle cx="310" cy="145" r="36" fill="#fef9c3" opacity="0.92" />
 
             {/* Çok Hafif Hareket Eden Bulutlar */}
@@ -282,6 +393,17 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
               fill="#86efac"
               opacity="0.78"
             />
+
+            {/* Ufukta Nefes Alan Yumuşak Vadi Sisi */}
+            <ellipse
+              cx="200"
+              cy="475"
+              rx="210"
+              ry="22"
+              fill="url(#natureMist)"
+              className="animate-mist-breathe"
+            />
+
             <path
               d="M -30 525 Q 135 470 275 515 T 430 490 L 430 800 L -30 800 Z"
               fill="#4ade80"
@@ -300,6 +422,23 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
                   <circle cx="0" cy="0" r="14" fill="#16a34a" />
                   <circle cx="-8" cy="6" r="10" fill="#15803d" />
                   <circle cx="8" cy="6" r="10" fill="#22c55e" />
+                </g>
+              </g>
+            ))}
+
+            {/* Rüzgârda Süzülen Yapraklar (Yeni Doğa CSS Animasyonu) */}
+            {[
+              { x: 85, y: 310, d: '0s', fill: '#4ade80' },
+              { x: 215, y: 275, d: '4.2s', fill: '#86efac' },
+              { x: 310, y: 345, d: '8.5s', fill: '#22c55e' },
+            ].map((lf, idx) => (
+              <g key={idx} transform={`translate(${lf.x}, ${lf.y})`}>
+                <g className="animate-leaf-drift" style={{ animationDelay: lf.d }}>
+                  <path
+                    d="M 0 0 Q 6 -4 11 0 Q 6 5 0 0 Z"
+                    fill={lf.fill}
+                    opacity="0.82"
+                  />
                 </g>
               </g>
             ))}
@@ -337,7 +476,7 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
         </div>
       )}
 
-      {/* B. RAINY — YAĞMURLU HAVA (Gri-mavi, açık mor ve yumuşak yeşil tonlarında huzurlu yağmur atmosferi) */}
+      {/* B. RAINY — YAĞMURLU HAVA (Bulut arası nefes alan ışık huzmeleri, ufuk sisi ve genişleyen su halkaları) */}
       {themeId === 'rainy' && (
         <div className="absolute inset-0 bg-gradient-to-b from-[#334155] via-[#475569] to-[#314e52]">
           <svg
@@ -352,14 +491,21 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
                 <stop offset="100%" stopColor="#334155" stopOpacity="0" />
               </radialGradient>
               <linearGradient id="softRainBeam" x1="0%" y1="0%" x2="20%" y2="100%">
-                <stop offset="0%" stopColor="#e0e7ff" stopOpacity="0.22" />
+                <stop offset="0%" stopColor="#e0e7ff" stopOpacity="0.26" />
                 <stop offset="100%" stopColor="#94a3b8" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient id="rainMistGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#cbd5e1" stopOpacity="0" />
+                <stop offset="50%" stopColor="#e2e8f0" stopOpacity="0.38" />
+                <stop offset="100%" stopColor="#cbd5e1" stopOpacity="0" />
               </linearGradient>
             </defs>
 
-            {/* Bulutların Arasından Süzülen Yumuşak Işık */}
+            {/* Bulutların Arasından Süzülen Nefes Alan Işık Huzmeleri */}
             <circle cx="200" cy="210" r="210" fill="url(#rainCloudLight)" className="animate-pulse-soft" />
-            <polygon points="130,0 240,0 310,550 70,550" fill="url(#softRainBeam)" />
+            <g className="animate-sunbeam-breathe" style={{ transformOrigin: '190px 60px' }}>
+              <polygon points="130,0 240,0 310,550 70,550" fill="url(#softRainBeam)" />
+            </g>
 
             {/* Yumuşak Yağmur Bulutları */}
             <g className="animate-cloud-drift">
@@ -368,12 +514,23 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
               <ellipse cx="195" cy="85" rx="130" ry="32" fill="#94a3b8" opacity="0.35" />
             </g>
 
-            {/* Yağmur Altında Sakin Tepeler (Gri-mavi, açık mor ve yumuşak yeşil tonları) */}
+            {/* Yağmur Altında Sakin Tepeler */}
             <path
               d="M -30 480 Q 105 435 235 475 T 430 450 L 430 800 L -30 800 Z"
               fill="#4c566a"
               opacity="0.7"
             />
+
+            {/* Ufukta Nefes Alan Yağmur Sisi */}
+            <ellipse
+              cx="200"
+              cy="510"
+              rx="220"
+              ry="24"
+              fill="url(#rainMistGrad)"
+              className="animate-mist-breathe"
+            />
+
             <path
               d="M -30 545 Q 130 500 270 540 T 430 520 L 430 800 L -30 800 Z"
               fill="#3b5249"
@@ -384,21 +541,33 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
               fill="#263e3a"
             />
 
-            {/* Su Birikintisinde Yumuşak Damla Halkaları */}
-            <g className="animate-water-ripple" style={{ transformOrigin: '140px 690px' }}>
-              <ellipse cx="140" cy="690" rx="36" ry="8" fill="none" stroke="#cbd5e1" strokeWidth="1" opacity="0.45" />
-            </g>
-            <g
-              className="animate-water-ripple"
-              style={{ transformOrigin: '265px 725px', animationDelay: '2.5s' }}
-            >
-              <ellipse cx="265" cy="725" rx="44" ry="10" fill="none" stroke="#cbd5e1" strokeWidth="1" opacity="0.4" />
-            </g>
+            {/* Su Yüzeyinde Genişleyen Konsantrik Damla Halkaları */}
+            {[
+              { cx: 115, cy: 685, rx: 38, ry: 9, d: '0s' },
+              { cx: 265, cy: 720, rx: 46, ry: 11, d: '2.2s' },
+              { cx: 185, cy: 750, rx: 34, ry: 8, d: '4.4s' },
+            ].map((rp, idx) => (
+              <g
+                key={idx}
+                className="animate-ripple-expand"
+                style={{ transformOrigin: `${rp.cx}px ${rp.cy}px`, animationDelay: rp.d }}
+              >
+                <ellipse
+                  cx={rp.cx}
+                  cy={rp.cy}
+                  rx={rp.rx}
+                  ry={rp.ry}
+                  fill="none"
+                  stroke="#e2e8f0"
+                  strokeWidth="1.2"
+                />
+              </g>
+            ))}
           </svg>
         </div>
       )}
 
-      {/* C. NIGHT — GECE AMBİYANSI (Derin lacivert gökyüzü, ay ışığı, sakin yıldızlar ve doğa silüeti) */}
+      {/* C. NIGHT — GECE AMBİYANSI (Yumuşak kutup ışığı dalgalanması, gümüş ay ışığı ve sakin yıldızlar) */}
       {themeId === 'night' && (
         <div className="absolute inset-0 bg-gradient-to-b from-[#090d1e] via-[#1e1b4b] to-[#1e1338]">
           <svg
@@ -412,7 +581,31 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
                 <stop offset="45%" stopColor="#c084fc" stopOpacity="0.18" />
                 <stop offset="100%" stopColor="#090d1e" stopOpacity="0" />
               </radialGradient>
+              <linearGradient id="nightAurora1" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#818cf8" stopOpacity="0" />
+                <stop offset="35%" stopColor="#a855f7" stopOpacity="0.28" />
+                <stop offset="70%" stopColor="#38bdf8" stopOpacity="0.22" />
+                <stop offset="100%" stopColor="#818cf8" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient id="nightAurora2" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#34d399" stopOpacity="0" />
+                <stop offset="50%" stopColor="#c084fc" stopOpacity="0.22" />
+                <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
+              </linearGradient>
             </defs>
+
+            {/* Gece Gökyüzünde Yumuşak Kutup Işığı (Aurora) Dalgalanması */}
+            <path
+              d="M -40 240 Q 95 190 215 235 T 440 205 L 440 295 Q 295 325 185 285 T -40 310 Z"
+              fill="url(#nightAurora1)"
+              className="animate-aurora-wave"
+            />
+            <path
+              d="M -40 305 Q 125 265 255 305 T 440 280 L 440 355 Q 265 380 140 340 T -40 365 Z"
+              fill="url(#nightAurora2)"
+              className="animate-aurora-wave"
+              style={{ animationDelay: '5s' }}
+            />
 
             {/* Gümüş Ay Işığı Halesi */}
             <circle cx="288" cy="155" r="145" fill="url(#nightMoonHalo)" className="animate-pulse-soft" />
@@ -451,11 +644,20 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
               <ellipse cx="295" cy="225" rx="75" ry="18" fill="#c084fc" />
             </g>
 
-            {/* Uzakta Sakin Doğa ve Çam Silüetleri */}
+            {/* Uzakta Sakin Doğa Silüetleri ve Nefes Alan Gece Sisi */}
             <path
               d="M -30 515 Q 105 465 235 505 T 430 480 L 430 800 L -30 800 Z"
               fill="#1e1b4b"
               opacity="0.85"
+            />
+            <ellipse
+              cx="200"
+              cy="550"
+              rx="210"
+              ry="18"
+              fill="#c084fc"
+              opacity="0.14"
+              className="animate-mist-breathe"
             />
             <path
               d="M -30 575 Q 130 535 275 570 T 430 545 L 430 800 L -30 800 Z"
@@ -469,7 +671,7 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
         </div>
       )}
 
-      {/* D. SUNRISE — GÜN DOĞUMU (Ufuktan yavaşça yükselen güneş, mavi-pembe-şeftali-altın geçişler) */}
+      {/* D. SUNRISE — GÜN DOĞUMU (Yükselen güneş, nefes alan seher huzmeleri, ufuk sisi ve taç yapraklar) */}
       {themeId === 'sunrise' && (
         <div className="absolute inset-0 bg-gradient-to-b from-[#93c5fd] via-[#fbcfe8] to-[#fde68a]">
           <svg
@@ -484,10 +686,24 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
                 <stop offset="75%" stopColor="#fda4af" stopOpacity="0.35" />
                 <stop offset="100%" stopColor="#fbcfe8" stopOpacity="0" />
               </radialGradient>
+              <linearGradient id="sunriseBeam" x1="0%" y1="100%" x2="0%" y2="0%">
+                <stop offset="0%" stopColor="#fffbeb" stopOpacity="0.45" />
+                <stop offset="100%" stopColor="#fbcfe8" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient id="sunriseMist" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#fffbeb" stopOpacity="0" />
+                <stop offset="50%" stopColor="#fffbeb" stopOpacity="0.55" />
+                <stop offset="100%" stopColor="#fffbeb" stopOpacity="0" />
+              </linearGradient>
             </defs>
 
-            {/* Kesintisiz ve Yavaşça Yükselen Seher Güneşi */}
+            {/* Kesintisiz ve Yavaşça Yükselen Seher Güneşi ve Işık Huzmeleri */}
             <g className="animate-sunrise-cycle">
+              <g className="animate-sunbeam-breathe" style={{ transformOrigin: '200px 430px' }}>
+                <polygon points="200,430 70,90 145,90" fill="url(#sunriseBeam)" />
+                <polygon points="200,430 170,70 230,70" fill="url(#sunriseBeam)" />
+                <polygon points="200,430 255,90 330,90" fill="url(#sunriseBeam)" />
+              </g>
               <circle cx="200" cy="430" r="195" fill="url(#sunriseGlow)" />
               <circle cx="200" cy="430" r="44" fill="#fffbeb" opacity="0.94" />
             </g>
@@ -500,11 +716,19 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
               <ellipse cx="290" cy="248" rx="68" ry="12" fill="#fda4af" opacity="0.4" />
             </g>
 
-            {/* Gün Doğumu Tepeleri */}
+            {/* Gün Doğumu Tepeleri ve Nefes Alan Seher Sisi */}
             <path
               d="M -30 485 Q 95 435 225 475 T 430 455 L 430 800 L -30 800 Z"
               fill="#84a98c"
               opacity="0.65"
+            />
+            <ellipse
+              cx="200"
+              cy="512"
+              rx="225"
+              ry="24"
+              fill="url(#sunriseMist)"
+              className="animate-mist-breathe"
             />
             <path
               d="M -30 550 Q 130 505 270 545 T 430 525 L 430 800 L -30 800 Z"
@@ -515,6 +739,19 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
               d="M -30 620 Q 115 585 260 618 T 430 600 L 430 800 L -30 800 Z"
               fill="#354f52"
             />
+
+            {/* Seher Esintisiyle Süzülen Pembe Çiçek Taç Yaprakları */}
+            {[
+              { x: 110, y: 330, d: '0s', fill: '#fda4af' },
+              { x: 255, y: 295, d: '5s', fill: '#fbcfe8' },
+              { x: 175, y: 370, d: '9.5s', fill: '#fef08a' },
+            ].map((pt, idx) => (
+              <g key={idx} transform={`translate(${pt.x}, ${pt.y})`}>
+                <g className="animate-leaf-drift" style={{ animationDelay: pt.d }}>
+                  <ellipse cx="0" cy="0" rx="4.5" ry="2.5" fill={pt.fill} opacity="0.85" />
+                </g>
+              </g>
+            ))}
 
             {/* Çok Hafif Hareket Eden Sabah Çiçekleri */}
             {[55, 115, 185, 255, 330].map((fx, idx) => (
@@ -533,7 +770,7 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
         </div>
       )}
 
-      {/* E. SUNSET — GÜN BATIMI (Dağların ardında alçalan güneş, turuncu-pembe-mor geçişler, sis ve su yansıması) */}
+      {/* E. SUNSET — GÜN BATIMI (Alçalan güneş, nefes alan ufuk sisi ve su yüzeyinde genişleyen yansımalar) */}
       {themeId === 'sunset' && (
         <div className="absolute inset-0 bg-gradient-to-b from-[#2e1065] via-[#be185d] to-[#fb923c]">
           <svg
@@ -548,6 +785,11 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
                 <stop offset="75%" stopColor="#f43f5e" stopOpacity="0.32" />
                 <stop offset="100%" stopColor="#2e1065" stopOpacity="0" />
               </radialGradient>
+              <linearGradient id="sunsetMist" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#fed7aa" stopOpacity="0" />
+                <stop offset="50%" stopColor="#fed7aa" stopOpacity="0.38" />
+                <stop offset="100%" stopColor="#fed7aa" stopOpacity="0" />
+              </linearGradient>
             </defs>
 
             {/* Yavaşça Alçalan Sıcak Gün Batımı Güneşi */}
@@ -573,12 +815,17 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
               fill="#3b0764"
             />
 
-            {/* Ufukta Hafif Sis */}
-            <g className="animate-cloud-drift" style={{ animationDelay: '3s' }}>
-              <ellipse cx="200" cy="548" rx="220" ry="20" fill="#fed7aa" opacity="0.2" />
-            </g>
+            {/* Ufukta Nefes Alan Akşam Sisi */}
+            <ellipse
+              cx="200"
+              cy="552"
+              rx="230"
+              ry="22"
+              fill="url(#sunsetMist)"
+              className="animate-mist-breathe"
+            />
 
-            {/* Sakin Göl Yüzeyi ve Gün Batımı Su Yansımaları */}
+            {/* Sakin Göl Yüzeyi, Yakamoz Yansımaları ve Genişleyen Su Halkaları */}
             <rect x="0" y="565" width="400" height="235" fill="#1e1b4b" opacity="0.88" />
             {[
               { y: 585, rx: 58, ry: 3.5, d: '0s' },
@@ -594,16 +841,31 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
                 rx={rp.rx}
                 ry={rp.ry}
                 fill="#fdba74"
-                opacity="0.45"
-                className="animate-water-ripple"
+                className="animate-water-shimmer"
                 style={{ transformOrigin: `200px ${rp.y}px`, animationDelay: rp.d }}
               />
             ))}
+
+            {/* Su Yüzeyinde Genişleyen Huzurlu Halkalar */}
+            <g
+              className="animate-ripple-expand"
+              style={{ transformOrigin: '200px 640px' }}
+            >
+              <ellipse
+                cx="200"
+                cy="640"
+                rx="54"
+                ry="11"
+                fill="none"
+                stroke="#fed7aa"
+                strokeWidth="1.1"
+              />
+            </g>
           </svg>
         </div>
       )}
 
-      {/* F. MOONLIT NATURE — AY IŞIĞINDA DOĞA (Ay ışığıyla aydınlanan sakin göl, suda dalgalanmalar ve çiçekler) */}
+      {/* F. MOONLIT NATURE — AY IŞIĞINDA DOĞA (Kutup ışığı tülü, genişleyen su halkaları ve ay ışığı yansıması) */}
       {themeId === 'moonlit_nature' && (
         <div className="absolute inset-0 bg-gradient-to-b from-[#0f172a] via-[#134e4a] to-[#064e3b]">
           <svg
@@ -617,7 +879,19 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
                 <stop offset="45%" stopColor="#99f6e4" stopOpacity="0.24" />
                 <stop offset="100%" stopColor="#0f172a" stopOpacity="0" />
               </radialGradient>
+              <linearGradient id="moonAurora" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#2dd4bf" stopOpacity="0" />
+                <stop offset="50%" stopColor="#99f6e4" stopOpacity="0.26" />
+                <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
+              </linearGradient>
             </defs>
+
+            {/* Yumuşak Zümrüt-Gümüş Kutup Işığı Dalgalanması */}
+            <path
+              d="M -30 235 Q 110 185 240 230 T 430 205 L 430 285 Q 275 315 150 275 T -30 300 Z"
+              fill="url(#moonAurora)"
+              className="animate-aurora-wave"
+            />
 
             {/* Dolunay ve Gümüş Hale */}
             <circle cx="200" cy="175" r="165" fill="url(#moonlitGlow)" className="animate-pulse-soft" />
@@ -640,7 +914,18 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
               fill="#064e3b"
             />
 
-            {/* Ay Işığında Sakin Göl ve Gümüş Su Dalgalanmaları */}
+            {/* Göl Üzerinde Nefes Alan Gümüş Sis */}
+            <ellipse
+              cx="200"
+              cy="535"
+              rx="220"
+              ry="18"
+              fill="#ccfbf1"
+              opacity="0.18"
+              className="animate-mist-breathe"
+            />
+
+            {/* Ay Işığında Sakin Göl, Yakamozlar ve Genişleyen Su Halkaları */}
             <rect x="0" y="535" width="400" height="265" fill="#042f2e" />
             {[
               { y: 558, rx: 64, ry: 4, d: '0s' },
@@ -656,10 +941,30 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
                 rx={rp.rx}
                 ry={rp.ry}
                 fill="#ccfbf1"
-                opacity="0.42"
-                className="animate-water-ripple"
+                className="animate-water-shimmer"
                 style={{ transformOrigin: `200px ${rp.y}px`, animationDelay: rp.d }}
               />
+            ))}
+
+            {[
+              { cx: 200, cy: 615, rx: 52, ry: 12, d: '0s' },
+              { cx: 145, cy: 670, rx: 38, ry: 9, d: '3.2s' },
+            ].map((ring, idx) => (
+              <g
+                key={idx}
+                className="animate-ripple-expand"
+                style={{ transformOrigin: `${ring.cx}px ${ring.cy}px`, animationDelay: ring.d }}
+              >
+                <ellipse
+                  cx={ring.cx}
+                  cy={ring.cy}
+                  rx={ring.rx}
+                  ry={ring.ry}
+                  fill="none"
+                  stroke="#99f6e4"
+                  strokeWidth="1.1"
+                />
+              </g>
             ))}
 
             {/* Göl Kıyısında Ay Işığıyla Aydınlanan Çiçekler ve Sazlıklar */}
@@ -679,7 +984,7 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
         </div>
       )}
 
-      {/* G. PEACEFUL GARDEN — HUZURLU BAHÇE (Renkli çiçekler, kelebekler, yumuşak gün ışığı ve pastel tonlar) */}
+      {/* G. PEACEFUL GARDEN — HUZURLU BAHÇE (Nefes alan gün ışığı huzmeleri ve süzülen çiçek taç yaprakları) */}
       {themeId === 'peaceful_garden' && (
         <div className="absolute inset-0 bg-gradient-to-b from-[#bae6fd] via-[#fdf2f8] to-[#dcfce7]">
           <svg
@@ -693,10 +998,18 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
                 <stop offset="45%" stopColor="#fef08a" stopOpacity="0.52" />
                 <stop offset="100%" stopColor="#bae6fd" stopOpacity="0" />
               </radialGradient>
+              <linearGradient id="gardenBeam" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#fffbeb" stopOpacity="0.45" />
+                <stop offset="100%" stopColor="#fdf2f8" stopOpacity="0" />
+              </linearGradient>
             </defs>
 
-            {/* Yumuşak Bahçe Güneşi */}
+            {/* Yumuşak Bahçe Güneşi ve Nefes Alan Işık Huzmeleri */}
             <circle cx="88" cy="140" r="190" fill="url(#gardenSun)" className="animate-pulse-soft" />
+            <g className="animate-sunbeam-breathe" style={{ transformOrigin: '88px 140px' }}>
+              <polygon points="88,140 165,600 265,600" fill="url(#gardenBeam)" />
+              <polygon points="88,140 285,560 385,560" fill="url(#gardenBeam)" />
+            </g>
             <circle cx="88" cy="140" r="36" fill="#fffbeb" opacity="0.92" />
 
             {/* Yumuşak Pastel Bulutlar */}
@@ -704,6 +1017,20 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
               <ellipse cx="285" cy="145" rx="72" ry="19" fill="#ffffff" opacity="0.8" />
               <ellipse cx="145" cy="215" rx="64" ry="16" fill="#ffffff" opacity="0.72" />
             </g>
+
+            {/* Rüzgârda Süzülen Çiçek Taç Yaprakları */}
+            {[
+              { x: 75, y: 290, d: '0s', fill: '#f472b6' },
+              { x: 185, y: 255, d: '3.6s', fill: '#fbcfe8' },
+              { x: 275, y: 315, d: '7.2s', fill: '#c084fc' },
+              { x: 135, y: 350, d: '10.5s', fill: '#fde047' },
+            ].map((pt, idx) => (
+              <g key={idx} transform={`translate(${pt.x}, ${pt.y})`}>
+                <g className="animate-leaf-drift" style={{ animationDelay: pt.d }}>
+                  <ellipse cx="0" cy="0" rx="4.8" ry="2.8" fill={pt.fill} opacity="0.86" />
+                </g>
+              </g>
+            ))}
 
             {/* Uçuşan Kelebekler */}
             <g className="animate-butterfly" transform="translate(82, 360)">
@@ -754,6 +1081,462 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ themeId, reduc
                   <circle cx="-3" cy="4" r="4" fill={fl.color} />
                   <circle cx="3" cy="4" r="4" fill={fl.color} />
                   <circle cx="0" cy="0" r="3" fill={fl.center} />
+                </g>
+              </g>
+            ))}
+          </svg>
+        </div>
+      )}
+
+      {/* H. MISTY MOUNTAIN — SİSLİ DAĞ ZİRVESİ VE BULUT DENİZİ */}
+      {themeId === 'misty_mountain' && (
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0f172a] via-[#334155] to-[#475569]">
+          <svg
+            viewBox="0 0 400 800"
+            preserveAspectRatio="xMidYMid slice"
+            className="absolute inset-0 w-full h-full"
+          >
+            <defs>
+              <radialGradient id="mountainCrownGlow" cx="50%" cy="24%" r="55%">
+                <stop offset="0%" stopColor="#fef3c7" stopOpacity="0.72" />
+                <stop offset="45%" stopColor="#fcd34d" stopOpacity="0.28" />
+                <stop offset="100%" stopColor="#1e293b" stopOpacity="0" />
+              </radialGradient>
+              <linearGradient id="mountainBeam" x1="50%" y1="0%" x2="50%" y2="100%">
+                <stop offset="0%" stopColor="#fef3c7" stopOpacity="0.34" />
+                <stop offset="100%" stopColor="#334155" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient id="cloudSeaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#f8fafc" stopOpacity="0.78" />
+                <stop offset="100%" stopColor="#94a3b8" stopOpacity="0.18" />
+              </linearGradient>
+            </defs>
+
+            {/* Zirve Şafak Halesi ve Nefes Alan Işık Huzmeleri */}
+            <circle cx="200" cy="195" r="210" fill="url(#mountainCrownGlow)" className="animate-pulse-soft" />
+            <g className="animate-sunbeam-breathe" style={{ transformOrigin: '200px 195px' }}>
+              <polygon points="200,195 75,580 155,580" fill="url(#mountainBeam)" />
+              <polygon points="200,195 245,580 325,580" fill="url(#mountainBeam)" />
+            </g>
+
+            {/* Uzakta Süzülen Yüksek İrtifa Kartalları */}
+            <g className="animate-bird-glide" opacity="0.52">
+              <path
+                d="M 110 185 Q 118 177 126 184 Q 134 177 142 185"
+                fill="none"
+                stroke="#f8fafc"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
+              <path
+                d="M 255 162 Q 261 156 267 162 Q 273 156 279 162"
+                fill="none"
+                stroke="#f8fafc"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+              />
+            </g>
+
+            {/* 1. Arka Plan Uzak Dağ Sırası */}
+            <polygon
+              points="-40,520 55,345 145,440 235,310 335,435 435,355 440,620 -40,620"
+              fill="#334155"
+              opacity="0.88"
+            />
+            {/* Karlı Zirve Sırtları */}
+            <polygon points="235,310 205,360 230,352 248,368 265,350" fill="#e2e8f0" opacity="0.7" />
+            <polygon points="55,345 32,388 52,380 68,392 80,382" fill="#e2e8f0" opacity="0.6" />
+
+            {/* 1. Bulut Denizi Katmanı (Yavaşça Akan Vadi Bulutları) */}
+            <g className="animate-cloud-sea">
+              <path
+                d="M -60 445 Q 35 422 115 442 T 285 438 T 460 446 L 460 525 L -60 525 Z"
+                fill="url(#cloudSeaGrad)"
+              />
+              <ellipse cx="110" cy="455" rx="95" ry="22" fill="#f1f5f9" opacity="0.55" />
+              <ellipse cx="290" cy="462" rx="105" ry="24" fill="#e2e8f0" opacity="0.5" />
+            </g>
+
+            {/* 2. Orta Katman Heybetli Dağ Sırtları */}
+            <polygon
+              points="-40,610 25,455 125,535 195,415 295,525 385,445 440,610"
+              fill="#1e293b"
+            />
+            <polygon points="195,415 172,455 192,448 206,462 220,450" fill="#cbd5e1" opacity="0.55" />
+
+            {/* 2. Bulut Denizi ve Nefes Alan Vadi Sisi */}
+            <g className="animate-cloud-sea" style={{ animationDelay: '3.5s' }}>
+              <path
+                d="M -60 545 Q 55 520 155 544 T 335 536 T 460 548 L 460 650 L -60 650 Z"
+                fill="url(#cloudSeaGrad)"
+              />
+              <ellipse cx="185" cy="560" rx="135" ry="28" fill="#f8fafc" opacity="0.58" />
+            </g>
+
+            <ellipse
+              cx="200"
+              cy="615"
+              rx="230"
+              ry="32"
+              fill="#e2e8f0"
+              opacity="0.34"
+              className="animate-mist-breathe"
+            />
+
+            {/* 3. Ön Plan Dağ Yamacı ve Çam Silüetleri */}
+            <path
+              d="M -40 655 Q 110 610 265 650 T 440 625 L 440 820 L -40 820 Z"
+              fill="#0f172a"
+            />
+          </svg>
+        </div>
+      )}
+
+      {/* I. AUTUMN BREEZE — SONBAHAR ESİNTİSİ VE ALTIN YAPRAKLAR */}
+      {themeId === 'autumn_breeze' && (
+        <div className="absolute inset-0 bg-gradient-to-b from-[#fef3c7] via-[#fde68a] to-[#f59e0b]">
+          <svg
+            viewBox="0 0 400 800"
+            preserveAspectRatio="xMidYMid slice"
+            className="absolute inset-0 w-full h-full"
+          >
+            <defs>
+              <radialGradient id="autumnSunGlow" cx="72%" cy="22%" r="52%">
+                <stop offset="0%" stopColor="#fffbeb" stopOpacity="0.95" />
+                <stop offset="45%" stopColor="#fcd34d" stopOpacity="0.52" />
+                <stop offset="100%" stopColor="#fef3c7" stopOpacity="0" />
+              </radialGradient>
+              <linearGradient id="autumnBeam" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#fffbeb" stopOpacity="0.46" />
+                <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+
+            {/* Sıcak Sonbahar Güneşi ve Altın Işık Huzmeleri */}
+            <circle cx="288" cy="172" r="190" fill="url(#autumnSunGlow)" className="animate-pulse-soft" />
+            <g className="animate-sunbeam-breathe" style={{ transformOrigin: '288px 172px' }}>
+              <polygon points="288,172 80,590 175,590" fill="url(#autumnBeam)" />
+              <polygon points="288,172 195,620 285,620" fill="url(#autumnBeam)" />
+            </g>
+            <circle cx="288" cy="172" r="36" fill="#fffbeb" opacity="0.92" />
+
+            {/* Yumuşak Sonbahar Bulutları */}
+            <g className="animate-cloud-drift" opacity="0.72">
+              <ellipse cx="105" cy="155" rx="68" ry="18" fill="#fffbeb" />
+              <ellipse cx="235" cy="225" rx="74" ry="17" fill="#fef3c7" />
+            </g>
+
+            {/* Uzakta Göç Eden Kuş Sürüsü */}
+            <g className="animate-bird-glide" opacity="0.6">
+              <path
+                d="M 85 210 Q 91 203 97 209 Q 103 203 109 210"
+                fill="none"
+                stroke="#92400e"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
+              <path
+                d="M 118 196 Q 123 190 128 195 Q 133 190 138 196"
+                fill="none"
+                stroke="#92400e"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+              />
+            </g>
+
+            {/* Katmanlı Kehribar ve Kızıl Sonbahar Tepeleri */}
+            <path
+              d="M -40 495 Q 95 445 235 485 T 440 470 L 440 820 L -40 820 Z"
+              fill="#f59e0b"
+              opacity="0.82"
+            />
+            <path
+              d="M -40 555 Q 145 510 285 548 T 440 525 L 440 820 L -40 820 Z"
+              fill="#d97706"
+            />
+            <path
+              d="M -40 625 Q 110 580 260 618 T 440 595 L 440 820 L -40 820 Z"
+              fill="#b45309"
+            />
+
+            {/* Sonbahar Ağacı Dalları (Sağ Üst Köşe Silüeti) */}
+            <g transform="translate(335, 390)" className="animate-flower-sway">
+              <path d="M 35 160 Q 25 85 15 20" stroke="#78350f" strokeWidth="7" fill="none" strokeLinecap="round" />
+              <circle cx="5" cy="25" r="32" fill="#ea580c" opacity="0.88" />
+              <circle cx="32" cy="12" r="28" fill="#dc2626" opacity="0.85" />
+              <circle cx="-12" cy="42" r="24" fill="#f59e0b" opacity="0.9" />
+            </g>
+
+            {/* Rüzgârla Savrulan Altın ve Kızıl Akçaağaç Yaprakları */}
+            {[
+              { x: 65, y: 245, d: '0s', fill: '#dc2626' },
+              { x: 145, y: 210, d: '2.4s', fill: '#ea580c' },
+              { x: 225, y: 275, d: '4.8s', fill: '#d97706' },
+              { x: 305, y: 235, d: '7.2s', fill: '#b91c1c' },
+              { x: 105, y: 340, d: '9.6s', fill: '#f59e0b' },
+              { x: 255, y: 365, d: '1.5s', fill: '#ea580c' },
+            ].map((lf, idx) => (
+              <g key={idx} transform={`translate(${lf.x}, ${lf.y})`}>
+                <g className="animate-autumn-leaf" style={{ animationDelay: lf.d }}>
+                  <path
+                    d="M 0 -7 C 4 -4, 7 0, 3 5 C 1 7, -1 7, -3 5 C -7 0, -4 -4, 0 -7 Z"
+                    fill={lf.fill}
+                    opacity="0.88"
+                  />
+                </g>
+              </g>
+            ))}
+
+            {/* Rüzgârla Salınan Altın Başaklar */}
+            {[35, 82, 134, 192, 248, 312, 362].map((gx, i) => (
+              <g
+                key={i}
+                transform={`translate(${gx}, 695)`}
+                className="animate-grass-sway"
+                style={{ animationDelay: `${(i % 4) * 0.6}s` }}
+              >
+                <path
+                  d="M 0 40 Q -6 16 -10 0"
+                  fill="none"
+                  stroke="#fde68a"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  opacity="0.78"
+                />
+                <path
+                  d="M 6 40 Q 12 18 15 4"
+                  fill="none"
+                  stroke="#fcd34d"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  opacity="0.72"
+                />
+              </g>
+            ))}
+          </svg>
+        </div>
+      )}
+
+      {/* J. CALM SEASHORE — SAKİN DENİZ KIYISI VE HAFİF DALGALAR */}
+      {themeId === 'calm_seashore' && (
+        <div className="absolute inset-0 bg-gradient-to-b from-[#bae6fd] via-[#7dd3fc] to-[#2dd4bf]">
+          <svg
+            viewBox="0 0 400 800"
+            preserveAspectRatio="xMidYMid slice"
+            className="absolute inset-0 w-full h-full"
+          >
+            <defs>
+              <radialGradient id="seaSunGlow" cx="50%" cy="24%" r="50%">
+                <stop offset="0%" stopColor="#fffbeb" stopOpacity="0.95" />
+                <stop offset="48%" stopColor="#fef08a" stopOpacity="0.45" />
+                <stop offset="100%" stopColor="#bae6fd" stopOpacity="0" />
+              </radialGradient>
+              <linearGradient id="oceanHorizonGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#0284c7" stopOpacity="0.88" />
+                <stop offset="55%" stopColor="#0d9488" stopOpacity="0.92" />
+                <stop offset="100%" stopColor="#99f6e4" stopOpacity="0.95" />
+              </linearGradient>
+            </defs>
+
+            {/* Parlak Sahil Güneşi ve İnce Bulutlar */}
+            <circle cx="200" cy="185" r="175" fill="url(#seaSunGlow)" className="animate-pulse-soft" />
+            <circle cx="200" cy="185" r="36" fill="#fffbeb" opacity="0.94" />
+
+            <g className="animate-cloud-drift" opacity="0.8">
+              <ellipse cx="95" cy="145" rx="68" ry="17" fill="#ffffff" />
+              <ellipse cx="305" cy="168" rx="74" ry="18" fill="#f0f9ff" />
+            </g>
+
+            {/* Ufukta Süzülen Martılar */}
+            <g className="animate-bird-glide" opacity="0.68">
+              <path
+                d="M 120 225 Q 128 216 136 224 Q 144 216 152 225"
+                fill="none"
+                stroke="#0369a1"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+              <path
+                d="M 255 205 Q 262 198 269 204 Q 276 198 283 205"
+                fill="none"
+                stroke="#0369a1"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            </g>
+
+            {/* Uzak Ada Tepeleri */}
+            <path
+              d="M -30 435 Q 65 395 155 435 Z"
+              fill="#0369a1"
+              opacity="0.45"
+            />
+            <path
+              d="M 265 435 Q 345 402 430 435 Z"
+              fill="#0f766e"
+              opacity="0.45"
+            />
+
+            {/* Sakin Deniz Yüzeyi */}
+            <rect x="0" y="432" width="400" height="260" fill="url(#oceanHorizonGrad)" />
+
+            {/* Deniz Üzerinde Güneş Parıltıları */}
+            {[
+              { y: 455, rx: 56, ry: 3, d: '0s' },
+              { y: 482, rx: 46, ry: 2.8, d: '1.2s' },
+              { y: 512, rx: 38, ry: 2.5, d: '2.4s' },
+              { y: 545, rx: 30, ry: 2.2, d: '0.8s' },
+            ].map((sh, idx) => (
+              <ellipse
+                key={idx}
+                cx="200"
+                cy={sh.y}
+                rx={sh.rx}
+                ry={sh.ry}
+                fill="#fef9c3"
+                className="animate-water-shimmer"
+                style={{ transformOrigin: `200px ${sh.y}px`, animationDelay: sh.d }}
+              />
+            ))}
+
+            {/* Kıyıya Vuran Ritmik Köpüklü Dalga Katmanları */}
+            <g className="animate-shore-wave">
+              <path
+                d="M -30 595 Q 95 582 200 596 T 430 590 L 430 625 L -30 625 Z"
+                fill="#ccfbf1"
+                opacity="0.62"
+              />
+              <path
+                d="M -30 595 Q 95 582 200 596 T 430 590"
+                fill="none"
+                stroke="#ffffff"
+                strokeWidth="2.5"
+                opacity="0.85"
+              />
+            </g>
+
+            <g className="animate-shore-wave" style={{ animationDelay: '2.4s' }}>
+              <path
+                d="M -30 638 Q 110 624 220 638 T 430 632 L 430 668 L -30 668 Z"
+                fill="#f0fdfa"
+                opacity="0.72"
+              />
+              <path
+                d="M -30 638 Q 110 624 220 638 T 430 632"
+                fill="none"
+                stroke="#ffffff"
+                strokeWidth="3"
+                opacity="0.92"
+              />
+            </g>
+
+            {/* Sıcak Kumlu Sahil Kıyısı */}
+            <path
+              d="M -30 662 Q 120 648 255 664 T 430 655 L 430 820 L -30 820 Z"
+              fill="#fde68a"
+              opacity="0.92"
+            />
+            <path
+              d="M -30 695 Q 140 682 275 698 T 430 688 L 430 820 L -30 820 Z"
+              fill="#fcd34d"
+              opacity="0.85"
+            />
+          </svg>
+        </div>
+      )}
+
+      {/* K. SNOWY WINTER — KARLI KIŞ SABAHI VE SÜZÜLEN KAR TANELERİ */}
+      {themeId === 'snowy_winter' && (
+        <div className="absolute inset-0 bg-gradient-to-b from-[#dbeafe] via-[#e2e8f0] to-[#f8fafc]">
+          <svg
+            viewBox="0 0 400 800"
+            preserveAspectRatio="xMidYMid slice"
+            className="absolute inset-0 w-full h-full"
+          >
+            <defs>
+              <radialGradient id="winterSunGlow" cx="68%" cy="20%" r="48%">
+                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.96" />
+                <stop offset="50%" stopColor="#e0f2fe" stopOpacity="0.58" />
+                <stop offset="100%" stopColor="#dbeafe" stopOpacity="0" />
+              </radialGradient>
+              <linearGradient id="snowSlope1" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#f8fafc" />
+                <stop offset="100%" stopColor="#cbd5e1" />
+              </linearGradient>
+              <linearGradient id="snowSlope2" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#ffffff" />
+                <stop offset="100%" stopColor="#e2e8f0" />
+              </linearGradient>
+            </defs>
+
+            {/* Yumuşak Kış Güneşi ve Berrak Sabah Halesi */}
+            <circle cx="272" cy="160" r="175" fill="url(#winterSunGlow)" className="animate-pulse-soft" />
+            <circle cx="272" cy="160" r="32" fill="#ffffff" opacity="0.94" />
+
+            {/* Yumuşak Kış Bulutları */}
+            <g className="animate-cloud-drift" opacity="0.82">
+              <ellipse cx="110" cy="150" rx="76" ry="20" fill="#ffffff" />
+              <ellipse cx="235" cy="215" rx="68" ry="17" fill="#f8fafc" />
+            </g>
+
+            {/* Uzak Karlı Dağ Sırtları */}
+            <polygon
+              points="-40,505 70,385 175,465 285,370 430,490 430,600 -40,600"
+              fill="#cbd5e1"
+              opacity="0.78"
+            />
+
+            {/* Karla Örtülü Yumuşak Kış Tepeleri */}
+            <path
+              d="M -40 520 Q 105 468 245 512 T 440 495 L 440 820 L -40 820 Z"
+              fill="url(#snowSlope1)"
+            />
+
+            {/* Nefes Alan Sabah Kırağı Sisi */}
+            <ellipse
+              cx="200"
+              cy="555"
+              rx="220"
+              ry="24"
+              fill="#ffffff"
+              opacity="0.65"
+              className="animate-mist-breathe"
+            />
+
+            {/* Karla Kaplı Huzurlu Çam Ağaçları */}
+            {[
+              { x: 58, y: 505, s: 0.95 },
+              { x: 105, y: 528, s: 0.78 },
+              { x: 315, y: 498, s: 1.02 },
+              { x: 358, y: 522, s: 0.84 },
+            ].map((tree, idx) => (
+              <g key={idx} transform={`translate(${tree.x}, ${tree.y}) scale(${tree.s})`}>
+                <polygon points="0,-42 -20,-10 20,-10" fill="#334155" />
+                <polygon points="0,-42 -14,-20 14,-20" fill="#f8fafc" opacity="0.88" />
+                <polygon points="0,-24 -26,12 26,12" fill="#1e293b" />
+                <polygon points="0,-24 -18,-2 18,-2" fill="#f8fafc" opacity="0.85" />
+                <polygon points="0,-4 -32,36 32,36" fill="#0f172a" />
+                <polygon points="0,-4 -22,16 22,16" fill="#ffffff" opacity="0.82" />
+              </g>
+            ))}
+
+            {/* Ön Plan Bembeyaz Kar Yamaçları */}
+            <path
+              d="M -40 595 Q 130 552 275 592 T 440 575 L 440 820 L -40 820 Z"
+              fill="url(#snowSlope2)"
+            />
+
+            {/* SVG Katmanında Süzülen Seçkin Kar Kristalleri */}
+            {[
+              { x: 75, y: 240, d: '0s', r: 3.5 },
+              { x: 165, y: 195, d: '2.8s', r: 3 },
+              { x: 245, y: 265, d: '5.4s', r: 3.8 },
+              { x: 325, y: 215, d: '8.1s', r: 3.2 },
+              { x: 125, y: 335, d: '4.2s', r: 2.8 },
+            ].map((sn, idx) => (
+              <g key={idx} transform={`translate(${sn.x}, ${sn.y})`}>
+                <g className="animate-winter-snow" style={{ animationDelay: sn.d }}>
+                  <circle cx="0" cy="0" r={sn.r} fill="#ffffff" opacity="0.92" />
                 </g>
               </g>
             ))}
