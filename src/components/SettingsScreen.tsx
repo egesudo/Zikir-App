@@ -10,8 +10,11 @@ import {
   Wind,
   Waves,
   Music,
+  CloudRain,
+  Bird,
+  Moon,
 } from 'lucide-react';
-import { THEMES, THEME_ORDER, ThemeId } from '../data/dhikrs';
+import { THEMES, THEME_ORDER } from '../data/dhikrs';
 import { AmbientSoundMode, LastSessionSummary, SettingsState } from '../utils/storage';
 import { pulseAmbientFocusRhythm } from '../utils/sound';
 
@@ -32,28 +35,46 @@ const AMBIENT_MODES: {
   Icon: React.FC<{ className?: string }>;
 }[] = [
   {
-    id: 'river',
-    label: 'Huzurlu Şadırvan',
-    desc: 'Zikir ritmiyle dalgalanan yumuşak şadırvan ve su akışı',
-    Icon: Waves,
+    id: 'auto',
+    label: 'Temaya Uygun Ses (Otomatik)',
+    desc: 'Seçili temaya göre rüzgâr, kuş, yağmur, su veya gece sesi',
+    Icon: Sparkles,
+  },
+  {
+    id: 'birds',
+    label: 'Rüzgâr ve Kuş Sesleri',
+    desc: 'Doğa, Gün Doğumu ve Huzurlu Bahçe için hafif esinti ve kuşlar',
+    Icon: Bird,
+  },
+  {
+    id: 'rain',
+    label: 'Yumuşak Yağmur ve Damlalar',
+    desc: 'Huzurlu yağmur çisentisi ve su damlası rezonansı',
+    Icon: CloudRain,
+  },
+  {
+    id: 'night',
+    label: 'Gece Böcekleri ve Sükûnet',
+    desc: 'Hafif gece böcekleri ve sakin gece doğası',
+    Icon: Moon,
   },
   {
     id: 'wind',
-    label: 'Esintili Vadi',
-    desc: 'Zikir temponuzla uyum içinde esen dingin vadi rüzgârı',
+    label: 'Esintili Vadi ve Su Sesi',
+    desc: 'Yumuşak akşam rüzgârı ve dingin su yansıması',
     Icon: Wind,
   },
   {
-    id: 'ney',
-    label: 'Hafif Ney',
-    desc: 'Derinden gelen sıcak ney nefesi ve Rast dem tınısı',
-    Icon: Music,
+    id: 'river',
+    label: 'Hafif Su Dalgası ve Şadırvan',
+    desc: 'Ay ışığında su dalgalanması ve şadırvan akışı',
+    Icon: Waves,
   },
   {
-    id: 'auto',
-    label: 'Otomatik (Manzaraya Göre)',
-    desc: 'Seçili manzaraya uygun şadırvan, vadi veya ney ambiyansı',
-    Icon: Sparkles,
+    id: 'ney',
+    label: 'Hafif Ney Tefekkürü',
+    desc: 'Derinden gelen sıcak ney nefesi ve Rast dem tınısı',
+    Icon: Music,
   },
 ];
 
@@ -66,32 +87,36 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onUpdateSettings,
   onBackHome,
 }) => {
-  const activeTheme = THEMES[settings.themeId] || THEMES.misty_valley;
+  const activeTheme = THEMES[settings.themeId] || THEMES.nature;
   const isDarkText = activeTheme.isDarkText;
-
-  const themeSwatches: Record<ThemeId, string> = {
-    misty_valley: 'linear-gradient(135deg, #fde68a 0%, #84a98c 55%, #354f52 100%)',
-    mosque_courtyard: 'linear-gradient(135deg, #f5ebe0 0%, #b5c9c3 55%, #6b7f5e 100%)',
-    lavender_hills: 'linear-gradient(135deg, #4c1d95 0%, #a855f7 55%, #f59e0b 100%)',
-    meadow: 'linear-gradient(135deg, #7dd3fc 0%, #fef08a 50%, #4ade80 100%)',
-    sunset: 'linear-gradient(135deg, #58355e 0%, #c08497 55%, #fde047 100%)',
-    cosmos: 'linear-gradient(135deg, #14092b 0%, #6b21a8 60%, #c084fc 100%)',
-    emerald_lake: 'linear-gradient(135deg, #14532d 0%, #059669 60%, #a7f3d0 100%)',
-    painted_valley: 'linear-gradient(135deg, #38bdf8 0%, #84cc16 55%, #f59e0b 100%)',
-  };
 
   const handleToggleAmbient = () => {
     const nextEnabled = !settings.ambientEnabled;
     onUpdateSettings({ ambientEnabled: nextEnabled });
     if (nextEnabled) {
-      pulseAmbientFocusRhythm(true, settings.ambientMode, settings.themeId);
+      pulseAmbientFocusRhythm(
+        true,
+        settings.ambientMode,
+        settings.themeId,
+        settings.ambientVolume
+      );
     }
   };
 
   const handleSelectAmbientMode = (mode: AmbientSoundMode) => {
     onUpdateSettings({ ambientEnabled: true, ambientMode: mode });
-    pulseAmbientFocusRhythm(true, mode, settings.themeId);
+    pulseAmbientFocusRhythm(true, mode, settings.themeId, settings.ambientVolume);
   };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const nextVol = Math.min(1, Math.max(0, Number(e.target.value) / 100));
+    onUpdateSettings({
+      ambientVolume: nextVol,
+      ambientEnabled: nextVol > 0.01 ? true : settings.ambientEnabled,
+    });
+  };
+
+  const volumePercent = Math.round((settings.ambientVolume ?? 0.35) * 100);
 
   return (
     <main className="relative z-10 min-h-dvh flex flex-col px-5 pt-5 pb-8 max-w-xl mx-auto">
@@ -120,16 +145,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
       {/* Sıcak Krem ve Bej Ayarlar Kartı */}
       <div className="rounded-3xl bg-[#F6F0E4]/95 text-[#2C221A] backdrop-blur-xl border border-[#D8C8B0] p-5 sm:p-6 shadow-[0_18px_42px_rgba(35,25,15,0.22)] space-y-6">
-        {/* 1. Arka Plan ve Huzurlu Ambiyans Seçimi */}
+        {/* 1. Dinamik ve Animasyonlu 7 Huzur Ambiyansı Seçimi (Küçük Önizleme Kartları) */}
         <section>
           <div className="flex items-center gap-2 mb-3">
             <Palette className="w-4 h-4 text-[#B87824] shrink-0" />
             <h2 className="text-sm font-semibold tracking-wide text-[#2B2118]">
-              Huzurlu Manzara ve Ambiyans Seçimi ({THEME_ORDER.length} Manzara)
+              Dinamik Huzur Ambiyansları ({THEME_ORDER.length} Canlı Tema)
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {THEME_ORDER.map((tId) => {
               const t = THEMES[tId];
               const isSelected = settings.themeId === tId;
@@ -137,23 +162,36 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <button
                   key={tId}
                   type="button"
-                  onClick={() => onUpdateSettings({ themeId: tId })}
-                  className={`w-full min-h-[56px] p-3 rounded-2xl border text-left flex items-center justify-between gap-3 transition-all cursor-pointer ${
+                  onClick={() => {
+                    onUpdateSettings({ themeId: tId });
+                    if (settings.ambientEnabled) {
+                      pulseAmbientFocusRhythm(
+                        true,
+                        settings.ambientMode,
+                        tId,
+                        settings.ambientVolume
+                      );
+                    }
+                  }}
+                  className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between gap-3 transition-all cursor-pointer ${
                     isSelected
                       ? 'bg-[#E5D7C0] border-[#B87824] shadow-sm'
                       : 'bg-[#EDE4D3] border-[#DCCEB6] hover:bg-[#E6DBC7]'
                   }`}
                 >
-                  <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0">
                     <span
-                      className="w-10 h-10 rounded-xl shrink-0 border border-[#CBB99E] shadow-inner"
-                      style={{ background: themeSwatches[tId] }}
+                      className="w-12 h-12 rounded-xl shrink-0 border border-[#CBB99E] shadow-inner"
+                      style={{ background: t.swatch }}
                     />
                     <div className="min-w-0">
                       <div className="text-sm font-semibold text-[#2B2118] truncate">
-                        {t.name}
+                        {t.name}{' '}
+                        <span className="text-[11px] font-normal text-[#6B5A4B]">
+                          ({t.englishName})
+                        </span>
                       </div>
-                      <div className="text-xs text-[#6B5A4B] truncate mt-0.5">
+                      <div className="text-[11px] text-[#6B5A4B] line-clamp-1 mt-0.5">
                         {t.subtitle}
                       </div>
                     </div>
@@ -172,9 +210,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
         <div className="h-px bg-[#DFD2BC]" />
 
-        {/* 2. Ses, Doğa Ambiyansı, Titreşim ve Animasyon Tercihleri */}
+        {/* 2. Ses, Doğa Ambiyansı, Ses Seviyesi, Titreşim ve Animasyon Tercihleri */}
         <section className="space-y-3.5">
-          {/* Tesbih Dokunuş Sesi */}
+          {/* Tesbih Dokunuş Sesi (Ambiyans sesinden bağımsız kontrol) */}
           <div className="flex items-center justify-between gap-4 py-1.5">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-[#EAE0CE] flex items-center justify-center shrink-0">
@@ -182,10 +220,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </div>
               <div>
                 <div className="text-sm font-semibold text-[#2B2118]">
-                  Doğal Ahşap Tesbih Sesi
+                  Zikir Tesbih Boncuğu Sesi
                 </div>
                 <div className="text-xs text-[#6E5D4F]">
-                  Her zikirde tok ahşap boncuk dokunuşu ve hafif ney tınısı
+                  Her zikirde doğal ahşap boncuk dokunuşu ve hafif ney tınısı
                 </div>
               </div>
             </div>
@@ -204,8 +242,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </button>
           </div>
 
-          {/* Zikir Ritmiyle Senkronize Arka Plan Doğa Sesleri (Huzurlu Şadırvan / Esintili Vadi) */}
-          <div className="p-4 rounded-2xl bg-[#EDE4D3]/90 border border-[#DCCEB6] space-y-3">
+          {/* Çevresel Ambiyans Sesi ve Ses Düzeyi Kontrolü */}
+          <div className="p-4 rounded-2xl bg-[#EDE4D3]/90 border border-[#DCCEB6] space-y-3.5">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-[#E2D4BC] flex items-center justify-center shrink-0">
@@ -213,17 +251,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 </div>
                 <div>
                   <div className="text-sm font-semibold text-[#2B2118]">
-                    Arka Plan Doğa Sesi (Ritim Senkronlu)
+                    Çevresel Ambiyans Sesi
                   </div>
                   <div className="text-xs text-[#6E5D4F]">
-                    Zikir çekim ritminizle uyumlu döngüsel doğa ambiyansı
+                    {activeTheme.soundDescription}
                   </div>
                 </div>
               </div>
               <button
                 type="button"
                 role="switch"
-                aria-label="Arka Plan Doğa Sesi"
+                aria-label="Çevresel Ambiyans Sesi"
                 aria-checked={settings.ambientEnabled}
                 onClick={handleToggleAmbient}
                 className={`min-w-[52px] h-8 rounded-full p-1 transition-colors cursor-pointer flex items-center shrink-0 ${
@@ -234,6 +272,28 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               >
                 <span className="w-6 h-6 rounded-full bg-[#FAF5EC] shadow-sm" />
               </button>
+            </div>
+
+            {/* Ambiyans Ses Düzeyi Kaydırıcısı */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between text-xs text-[#4A3C30]">
+                <label htmlFor="settings-ambient-volume" className="font-semibold">
+                  Ambiyans Ses Düzeyi
+                </label>
+                <span className="font-bold tabular-nums text-[#386B4D]">
+                  %{volumePercent}
+                </span>
+              </div>
+              <input
+                id="settings-ambient-volume"
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={volumePercent}
+                onChange={handleVolumeChange}
+                className="w-full h-2 rounded-lg appearance-none bg-[#D6C7AE] accent-[#386B4D] cursor-pointer"
+              />
             </div>
 
             {/* Döngüsel Doğa Sesi Seçenekleri */}

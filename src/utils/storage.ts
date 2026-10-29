@@ -1,6 +1,33 @@
 import { DHIKR_LIST, THEME_ORDER, ThemeId } from '../data/dhikrs';
 
-export type AmbientSoundMode = 'auto' | 'wind' | 'river' | 'ney';
+export type AmbientSoundMode =
+  | 'auto'
+  | 'birds'
+  | 'rain'
+  | 'night'
+  | 'wind'
+  | 'river'
+  | 'ney';
+
+export const AMBIENT_MODE_ORDER: AmbientSoundMode[] = [
+  'auto',
+  'birds',
+  'rain',
+  'night',
+  'wind',
+  'river',
+  'ney',
+];
+
+export const AMBIENT_MODE_LABELS: Record<AmbientSoundMode, string> = {
+  auto: 'Temaya Uygun Ses (Otomatik)',
+  birds: 'Rüzgâr ve Kuş Sesleri',
+  rain: 'Yumuşak Yağmur ve Damlalar',
+  night: 'Gece Böcekleri ve Sükûnet',
+  wind: 'Esintili Vadi ve Su Sesi',
+  river: 'Hafif Su Dalgası ve Şadırvan',
+  ney: 'Hafif Ney Tefekkürü',
+};
 
 export interface LastSessionSummary {
   dhikrId: string;
@@ -23,6 +50,7 @@ export interface SettingsState {
   soundEnabled: boolean;
   ambientEnabled: boolean;
   ambientMode: AmbientSoundMode;
+  ambientVolume: number;
   vibrationEnabled: boolean;
   reducedMotion: boolean;
 }
@@ -32,7 +60,25 @@ const SETTINGS_STORAGE_KEY = 'allaha_adim_adim_settings_v1';
 
 const VALID_DHIKR_IDS = new Set(DHIKR_LIST.map((d) => d.id));
 const VALID_THEME_IDS = new Set<ThemeId>(THEME_ORDER);
-const VALID_AMBIENT_MODES: AmbientSoundMode[] = ['auto', 'wind', 'river', 'ney'];
+const VALID_AMBIENT_MODES: AmbientSoundMode[] = [
+  'auto',
+  'birds',
+  'rain',
+  'night',
+  'wind',
+  'river',
+  'ney',
+];
+
+const LEGACY_THEME_MAP: Record<string, ThemeId> = {
+  misty_valley: 'sunrise',
+  mosque_courtyard: 'nature',
+  lavender_hills: 'sunset',
+  meadow: 'peaceful_garden',
+  cosmos: 'night',
+  emerald_lake: 'moonlit_nature',
+  painted_valley: 'nature',
+};
 
 export const DEFAULT_SESSION: SessionState = {
   currentCount: 0,
@@ -43,10 +89,11 @@ export const DEFAULT_SESSION: SessionState = {
 };
 
 export const DEFAULT_SETTINGS: SettingsState = {
-  themeId: 'misty_valley',
+  themeId: 'nature',
   soundEnabled: true,
   ambientEnabled: true,
   ambientMode: 'auto',
+  ambientVolume: 0.35,
   vibrationEnabled: true,
   reducedMotion: false,
 };
@@ -56,6 +103,11 @@ function sanitizeNumber(value: unknown, min: number, max: number, fallback: numb
   const rounded = Math.floor(value);
   if (rounded < min || rounded > max) return fallback;
   return rounded;
+}
+
+function sanitizeVolume(value: unknown, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  return Math.min(1, Math.max(0, Number(value.toFixed(2))));
 }
 
 function sanitizeLastSession(raw: unknown): LastSessionSummary | null {
@@ -124,12 +176,16 @@ export function loadSettingsState(): SettingsState {
   try {
     const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
     if (!raw) return DEFAULT_SETTINGS;
-    const parsed = JSON.parse(raw) as Partial<SettingsState>;
+    const parsed = JSON.parse(raw) as Partial<SettingsState> & { themeId?: string };
 
-    const themeId: ThemeId =
-      typeof parsed.themeId === 'string' && VALID_THEME_IDS.has(parsed.themeId as ThemeId)
-        ? (parsed.themeId as ThemeId)
-        : 'misty_valley';
+    let themeId: ThemeId = 'nature';
+    if (typeof parsed.themeId === 'string') {
+      if (VALID_THEME_IDS.has(parsed.themeId as ThemeId)) {
+        themeId = parsed.themeId as ThemeId;
+      } else if (parsed.themeId in LEGACY_THEME_MAP) {
+        themeId = LEGACY_THEME_MAP[parsed.themeId];
+      }
+    }
 
     const ambientMode: AmbientSoundMode =
       parsed.ambientMode && VALID_AMBIENT_MODES.includes(parsed.ambientMode)
@@ -141,6 +197,7 @@ export function loadSettingsState(): SettingsState {
       soundEnabled: typeof parsed.soundEnabled === 'boolean' ? parsed.soundEnabled : true,
       ambientEnabled: typeof parsed.ambientEnabled === 'boolean' ? parsed.ambientEnabled : true,
       ambientMode,
+      ambientVolume: sanitizeVolume(parsed.ambientVolume, 0.35),
       vibrationEnabled:
         typeof parsed.vibrationEnabled === 'boolean' ? parsed.vibrationEnabled : true,
       reducedMotion: typeof parsed.reducedMotion === 'boolean' ? parsed.reducedMotion : false,

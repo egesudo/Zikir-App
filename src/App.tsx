@@ -12,6 +12,8 @@ import {
   saveSettingsState,
   SessionState,
   SettingsState,
+  AMBIENT_MODE_ORDER,
+  AmbientSoundMode,
 } from './utils/storage';
 import {
   playBeadClickSound,
@@ -26,6 +28,7 @@ import { HomeScreen } from './components/HomeScreen';
 import { DhikrScreen } from './components/DhikrScreen';
 import { SettingsScreen } from './components/SettingsScreen';
 import { GoalModal } from './components/GoalModal';
+import { AmbianceModal } from './components/AmbianceModal';
 import { CompletionOverlay } from './components/CompletionOverlay';
 
 type ActiveScreen = 'home' | 'dhikr' | 'settings';
@@ -35,6 +38,7 @@ export default function App() {
   const [session, setSession] = useState<SessionState>(() => loadSessionState());
   const [settings, setSettings] = useState<SettingsState>(() => loadSettingsState());
   const [isGoalModalOpen, setIsGoalModalOpen] = useState<boolean>(false);
+  const [isAmbianceModalOpen, setIsAmbianceModalOpen] = useState<boolean>(false);
 
   // Oturum değişikliklerini localStorage'a kaydet
   useEffect(() => {
@@ -47,7 +51,8 @@ export default function App() {
     syncAmbientSoundscape(
       settings.ambientEnabled,
       settings.ambientMode,
-      settings.themeId
+      settings.themeId,
+      settings.ambientVolume
     );
   }, [settings]);
 
@@ -64,13 +69,14 @@ export default function App() {
   );
   const currentDhikr = DHIKR_LIST[currentDhikrIndex] || DHIKR_LIST[0];
   const nextDhikr = DHIKR_LIST[(currentDhikrIndex + 1) % DHIKR_LIST.length];
-  const currentTheme = THEMES[settings.themeId] || THEMES.misty_valley;
+  const currentTheme = THEMES[settings.themeId] || THEMES.nature;
 
   const handleOpenDhikrFromHome = () => {
     syncAmbientSoundscape(
       settings.ambientEnabled,
       settings.ambientMode,
-      settings.themeId
+      settings.themeId,
+      settings.ambientVolume
     );
     setScreen('dhikr');
     if (session.currentCount === 0 || session.isCompleted) {
@@ -83,7 +89,8 @@ export default function App() {
     pulseAmbientFocusRhythm(
       settings.ambientEnabled,
       settings.ambientMode,
-      settings.themeId
+      settings.themeId,
+      settings.ambientVolume
     );
 
     setSession((prev) => {
@@ -125,6 +132,7 @@ export default function App() {
     settings.soundEnabled,
     settings.ambientEnabled,
     settings.ambientMode,
+    settings.ambientVolume,
     settings.themeId,
     settings.vibrationEnabled,
   ]);
@@ -134,7 +142,8 @@ export default function App() {
     syncAmbientSoundscape(
       settings.ambientEnabled,
       settings.ambientMode,
-      settings.themeId
+      settings.themeId,
+      settings.ambientVolume
     );
     setSession((prev) => ({
       ...prev,
@@ -171,6 +180,41 @@ export default function App() {
     setSettings((prev) => ({ ...prev, ...partial }));
   };
 
+  // Zikir ekranından tek dokunuşla doğa sesi ritmi değiştirme
+  const handleCycleAmbient = (): { enabled: boolean; mode: AmbientSoundMode } => {
+    if (!settings.ambientEnabled) {
+      const startMode = settings.ambientMode || 'auto';
+      handleUpdateSettings({ ambientEnabled: true, ambientMode: startMode });
+      pulseAmbientFocusRhythm(
+        true,
+        startMode,
+        settings.themeId,
+        settings.ambientVolume
+      );
+      return { enabled: true, mode: startMode };
+    }
+
+    const currentIndex = AMBIENT_MODE_ORDER.indexOf(settings.ambientMode);
+    const isLastMode = currentIndex === AMBIENT_MODE_ORDER.length - 1;
+
+    if (isLastMode) {
+      handleUpdateSettings({ ambientEnabled: false });
+      stopAmbientSoundscape();
+      return { enabled: false, mode: settings.ambientMode };
+    }
+
+    const nextMode =
+      AMBIENT_MODE_ORDER[(currentIndex + 1) % AMBIENT_MODE_ORDER.length];
+    handleUpdateSettings({ ambientEnabled: true, ambientMode: nextMode });
+    pulseAmbientFocusRhythm(
+      true,
+      nextMode,
+      settings.themeId,
+      settings.ambientVolume
+    );
+    return { enabled: true, mode: nextMode };
+  };
+
   return (
     <div className="relative min-h-dvh w-full overflow-x-hidden">
       {/* Seçilen Temanın Görsel ve Atmosferik Arka Planı */}
@@ -199,12 +243,16 @@ export default function App() {
           currentCount={session.currentCount}
           targetCount={session.targetCount}
           soundEnabled={settings.soundEnabled}
+          ambientEnabled={settings.ambientEnabled}
+          ambientMode={settings.ambientMode}
           reducedMotion={settings.reducedMotion}
           onIncrement={handleIncrement}
           onReset={handleResetSession}
           onToggleSound={() =>
             handleUpdateSettings({ soundEnabled: !settings.soundEnabled })
           }
+          onOpenAmbianceModal={() => setIsAmbianceModalOpen(true)}
+          onCycleAmbient={handleCycleAmbient}
           onOpenGoalModal={() => setIsGoalModalOpen(true)}
           onBackHome={() => setScreen('home')}
         />
@@ -229,6 +277,14 @@ export default function App() {
         currentTarget={session.targetCount}
         onClose={() => setIsGoalModalOpen(false)}
         onStartSession={handleStartNewSession}
+      />
+
+      {/* Önizleme Kartlı Hızlı Ambiyans ve Doğa Sesi Seçici Penceresi */}
+      <AmbianceModal
+        isOpen={isAmbianceModalOpen}
+        settings={settings}
+        onUpdateSettings={handleUpdateSettings}
+        onClose={() => setIsAmbianceModalOpen(false)}
       />
 
       {/* Hedef Tamamlandığında Gösterilen Huzurlu Tamamlanma Ekranı */}

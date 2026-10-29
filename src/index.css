@@ -48,7 +48,7 @@
     transform: translateX(0px) translateY(0px);
   }
   50% {
-    transform: translateX(18px) translateY(-3px);
+    transform: translateX(22px) translateY(-3px);
   }
 }
 
@@ -61,12 +61,54 @@
   }
 }
 
-@keyframes ambientPanZoom {
+@keyframes grassSway {
   0%, 100% {
-    transform: scale(1.04) translate(0%, 0%);
+    transform: skewX(-3deg) scaleY(1);
   }
   50% {
-    transform: scale(1.11) translate(-1.5%, -1%);
+    transform: skewX(3.5deg) scaleY(1.02);
+  }
+}
+
+@keyframes birdGlide {
+  0%, 100% {
+    transform: translate(0px, 0px);
+  }
+  50% {
+    transform: translate(28px, -7px);
+  }
+}
+
+@keyframes sunriseCycle {
+  0%, 100% {
+    transform: translateY(10px) scale(0.97);
+    opacity: 0.88;
+  }
+  50% {
+    transform: translateY(-16px) scale(1.04);
+    opacity: 1;
+  }
+}
+
+@keyframes sunsetDescent {
+  0%, 100% {
+    transform: translateY(-8px) scale(1.02);
+    opacity: 0.96;
+  }
+  50% {
+    transform: translateY(14px) scale(0.98);
+    opacity: 0.84;
+  }
+}
+
+@keyframes waterRipple {
+  0%, 100% {
+    transform: scaleX(0.94) scaleY(0.96);
+    opacity: 0.38;
+  }
+  50% {
+    transform: scaleX(1.06) scaleY(1.04);
+    opacity: 0.72;
   }
 }
 
@@ -76,19 +118,19 @@
     opacity: 0.25;
   }
   50% {
-    transform: translateY(-16px) translateX(6px) scale(1.15);
-    opacity: 0.75;
+    transform: translateY(-14px) translateX(6px) scale(1.12);
+    opacity: 0.72;
   }
 }
 
 @keyframes starTwinkle {
   0%, 100% {
-    opacity: 0.3;
-    transform: scale(0.85);
+    opacity: 0.32;
+    transform: scale(0.92);
   }
   50% {
-    opacity: 0.95;
-    transform: scale(1.12);
+    opacity: 0.82;
+    transform: scale(1.05);
   }
 }
 
@@ -97,24 +139,24 @@
     transform: translate(0, 0) rotate(-4deg) scale(1);
   }
   25% {
-    transform: translate(7px, -6px) rotate(3deg) scale(0.95);
+    transform: translate(8px, -6px) rotate(3deg) scale(0.95);
   }
   50% {
-    transform: translate(14px, -2px) rotate(-2deg) scale(1.03);
+    transform: translate(16px, -2px) rotate(-2deg) scale(1.03);
   }
   75% {
-    transform: translate(6px, -9px) rotate(4deg) scale(0.97);
+    transform: translate(7px, -9px) rotate(4deg) scale(0.97);
   }
 }
 
 @keyframes pulseSoft {
   0%, 100% {
-    opacity: 0.45;
+    opacity: 0.48;
     transform: scale(1);
   }
   50% {
     opacity: 0.82;
-    transform: scale(1.06);
+    transform: scale(1.05);
   }
 }
 
@@ -136,45 +178,62 @@
 @keyframes rayRotate {
   0%, 100% {
     transform: rotate(-2.5deg) scale(1);
-    opacity: 0.52;
+    opacity: 0.48;
   }
   50% {
-    transform: rotate(2.5deg) scale(1.05);
-    opacity: 0.78;
+    transform: rotate(2.5deg) scale(1.04);
+    opacity: 0.75;
   }
 }
 
 .animate-float-slow {
-  animation: floatSlow 8s ease-in-out infinite;
+  animation: floatSlow 9s ease-in-out infinite;
 }
 
 .animate-cloud-drift {
-  animation: cloudDrift 16s ease-in-out infinite;
+  animation: cloudDrift 20s ease-in-out infinite;
 }
 
 .animate-flower-sway {
   transform-origin: bottom center;
-  animation: flowerSway 5.5s ease-in-out infinite;
+  animation: flowerSway 6s ease-in-out infinite;
 }
 
-.animate-ambient-pan {
-  animation: ambientPanZoom 26s ease-in-out infinite;
+.animate-grass-sway {
+  transform-origin: bottom center;
+  animation: grassSway 5.2s ease-in-out infinite;
+}
+
+.animate-bird-glide {
+  animation: birdGlide 18s ease-in-out infinite;
+}
+
+.animate-sunrise-cycle {
+  animation: sunriseCycle 24s ease-in-out infinite;
+}
+
+.animate-sunset-descent {
+  animation: sunsetDescent 26s ease-in-out infinite;
+}
+
+.animate-water-ripple {
+  animation: waterRipple 6.5s ease-in-out infinite;
 }
 
 .animate-mote {
-  animation: moteFloat 7.5s ease-in-out infinite;
+  animation: moteFloat 8.5s ease-in-out infinite;
 }
 
 .animate-twinkle {
-  animation: starTwinkle 4.2s ease-in-out infinite;
+  animation: starTwinkle 6.5s ease-in-out infinite;
 }
 
 .animate-butterfly {
-  animation: butterflyFlutter 9s ease-in-out infinite;
+  animation: butterflyFlutter 10s ease-in-out infinite;
 }
 
 .animate-pulse-soft {
-  animation: pulseSoft 5s ease-in-out infinite;
+  animation: pulseSoft 6s ease-in-out infinite;
 }
 
 .animate-rise-fade {
@@ -182,14 +241,23 @@
 }
 
 .animate-ray {
-  animation: rayRotate 11s ease-in-out infinite;
+  animation: rayRotate 14s ease-in-out infinite;
+}
+
+.animations-paused,
+.animations-paused * {
+  animation-play-state: paused !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-float-slow,
   .animate-cloud-drift,
   .animate-flower-sway,
-  .animate-ambient-pan,
+  .animate-grass-sway,
+  .animate-bird-glide,
+  .animate-sunrise-cycle,
+  .animate-sunset-descent,
+  .animate-water-ripple,
   .animate-mote,
   .animate-twinkle,
   .animate-butterfly,
@@ -198,5 +266,3 @@
     animation: none !important;
   }
 }
-
-
