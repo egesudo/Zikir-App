@@ -2,43 +2,28 @@ import { DHIKR_LIST, THEME_ORDER, ThemeId } from '../data/dhikrs';
 
 export type AmbientSoundMode =
   | 'auto'
-  | 'birds'
-  | 'rain'
-  | 'night'
-  | 'wind'
-  | 'river'
-  | 'mountain_wind'
-  | 'autumn_leaves'
-  | 'ocean_waves'
-  | 'winter_breeze'
-  | 'ney';
+  | 'ney'
+  | 'kanun'
+  | 'oud'
+  | 'kalimba'
+  | 'ambient_pad';
 
 export const AMBIENT_MODE_ORDER: AmbientSoundMode[] = [
   'auto',
-  'birds',
-  'rain',
-  'night',
-  'wind',
-  'river',
-  'mountain_wind',
-  'autumn_leaves',
-  'ocean_waves',
-  'winter_breeze',
   'ney',
+  'kanun',
+  'oud',
+  'kalimba',
+  'ambient_pad',
 ];
 
 export const AMBIENT_MODE_LABELS: Record<AmbientSoundMode, string> = {
-  auto: 'Temaya Uygun Ses (Otomatik)',
-  birds: 'Rüzgâr ve Kuş Sesleri',
-  rain: 'Yumuşak Yağmur ve Damlalar',
-  night: 'Gece Böcekleri ve Sükûnet',
-  wind: 'Esintili Vadi ve Su Sesi',
-  river: 'Hafif Su Dalgası ve Şadırvan',
-  mountain_wind: 'Zirve Esintisi ve Bulut Denizi',
-  autumn_leaves: 'Sonbahar Yaprak Hışırtısı ve Esinti',
-  ocean_waves: 'Sakin Kıyı Dalgaları ve Martılar',
-  winter_breeze: 'Karlı Kış Sabahı ve Kristal Esinti',
-  ney: 'Hafif Ney Tefekkürü',
+  auto: 'Temaya Uygun Enstrüman (Otomatik)',
+  ney: 'Hafif Ney (Bambu & Nefes Nağmeleri)',
+  kanun: 'Zarif Kanun (Su Damlası Tel Tınısı)',
+  oud: 'Sakin Ud & Tanbur (Tok Ahşap Tını)',
+  kalimba: 'Dingin Kalimba (Meditatif Kristal Çan)',
+  ambient_pad: 'Sıcak Pad (432 Hz Kadife Zemin)',
 };
 
 export interface LastSessionSummary {
@@ -74,17 +59,31 @@ const VALID_DHIKR_IDS = new Set(DHIKR_LIST.map((d) => d.id));
 const VALID_THEME_IDS = new Set<ThemeId>(THEME_ORDER);
 const VALID_AMBIENT_MODES: AmbientSoundMode[] = [
   'auto',
-  'birds',
-  'rain',
-  'night',
-  'wind',
-  'river',
-  'mountain_wind',
-  'autumn_leaves',
-  'ocean_waves',
-  'winter_breeze',
   'ney',
+  'kanun',
+  'oud',
+  'kalimba',
+  'ambient_pad',
 ];
+
+const LEGACY_AMBIENT_MAP: Record<string, AmbientSoundMode> = {
+  gentle_ney: 'ney',
+  delicate_kanun: 'kanun',
+  acoustic_oud: 'oud',
+  peaceful_kalimba: 'kalimba',
+  serene_pad: 'ambient_pad',
+  sufi_serenity: 'ney',
+  sacred_dawn: 'kanun',
+  birds: 'ney',
+  rain: 'ambient_pad',
+  night: 'oud',
+  wind: 'kanun',
+  river: 'kanun',
+  mountain_wind: 'ney',
+  autumn_leaves: 'oud',
+  ocean_waves: 'kalimba',
+  winter_breeze: 'kalimba',
+};
 
 const LEGACY_THEME_MAP: Record<string, ThemeId> = {
   misty_valley: 'sunrise',
@@ -109,7 +108,7 @@ export const DEFAULT_SETTINGS: SettingsState = {
   soundEnabled: true,
   ambientEnabled: true,
   ambientMode: 'auto',
-  ambientVolume: 0.65,
+  ambientVolume: 0.20,
   vibrationEnabled: true,
   reducedMotion: false,
 };
@@ -121,8 +120,10 @@ function sanitizeNumber(value: unknown, min: number, max: number, fallback: numb
   return rounded;
 }
 
-function sanitizeVolume(value: unknown, fallback: number): number {
+function sanitizeVolume(value: unknown, fallback = 0.20): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  // Eski yüksek varsayılan (0.60 veya üzeri) kalmışsa yeni sakin seviyeye (0.20) çek
+  if (value >= 0.60) return 0.20;
   return Math.min(1, Math.max(0, Number(value.toFixed(2))));
 }
 
@@ -203,17 +204,21 @@ export function loadSettingsState(): SettingsState {
       }
     }
 
-    const ambientMode: AmbientSoundMode =
-      parsed.ambientMode && VALID_AMBIENT_MODES.includes(parsed.ambientMode)
-        ? parsed.ambientMode
-        : 'auto';
+    let ambientMode: AmbientSoundMode = 'auto';
+    if (parsed.ambientMode) {
+      if (VALID_AMBIENT_MODES.includes(parsed.ambientMode as AmbientSoundMode)) {
+        ambientMode = parsed.ambientMode as AmbientSoundMode;
+      } else if (parsed.ambientMode in LEGACY_AMBIENT_MAP) {
+        ambientMode = LEGACY_AMBIENT_MAP[parsed.ambientMode];
+      }
+    }
 
     return {
       themeId,
       soundEnabled: typeof parsed.soundEnabled === 'boolean' ? parsed.soundEnabled : true,
       ambientEnabled: typeof parsed.ambientEnabled === 'boolean' ? parsed.ambientEnabled : true,
       ambientMode,
-      ambientVolume: sanitizeVolume(parsed.ambientVolume, 0.65),
+      ambientVolume: sanitizeVolume(parsed.ambientVolume, 0.20),
       vibrationEnabled:
         typeof parsed.vibrationEnabled === 'boolean' ? parsed.vibrationEnabled : true,
       reducedMotion: typeof parsed.reducedMotion === 'boolean' ? parsed.reducedMotion : false,
@@ -230,3 +235,41 @@ export function saveSettingsState(state: SettingsState): void {
     // localStorage kapalıysa sessizce devam et
   }
 }
+
+const FAVORITES_STORAGE_KEY = 'allaha_adim_adim_favorites_v1';
+
+export function loadFavoriteReflections(): string[] {
+  try {
+    const raw = localStorage.getItem(FAVORITES_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveFavoriteReflections(favorites: string[]): void {
+  try {
+    localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favorites));
+  } catch {
+    // sessizce devam et
+  }
+}
+
+export function toggleFavoriteReflection(id: string): { favorites: string[]; isFav: boolean } {
+  const current = loadFavoriteReflections();
+  const index = current.indexOf(id);
+  let updated: string[];
+  let isFav = false;
+  if (index >= 0) {
+    updated = current.filter((item) => item !== id);
+    isFav = false;
+  } else {
+    updated = [...current, id];
+    isFav = true;
+  }
+  saveFavoriteReflections(updated);
+  return { favorites: updated, isFav };
+}
+

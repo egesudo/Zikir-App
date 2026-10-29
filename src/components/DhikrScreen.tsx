@@ -6,13 +6,11 @@ import {
   RotateCcw,
   SlidersHorizontal,
   Image,
-  Waves,
-  Wind,
   Music,
-  CloudRain,
-  Bird,
-  Moon,
   Sparkles,
+  Feather,
+  Bell,
+  Layers,
 } from 'lucide-react';
 import { DhikrItem, ThemeConfig } from '../data/dhikrs';
 import { AmbientSoundMode, AMBIENT_MODE_LABELS } from '../utils/storage';
@@ -79,27 +77,25 @@ export const DhikrScreen: React.FC<DhikrScreenProps> = ({
   const handleAmbientQuickSwitch = () => {
     const next = onCycleAmbient();
     if (!next.enabled) {
-      setTransientHint('Doğa Sesi: Kapalı');
+      setTransientHint('Huzur Tınıları: Kapalı');
     } else {
-      setTransientHint(`Doğa Sesi: ${AMBIENT_MODE_LABELS[next.mode]}`);
+      setTransientHint(`Enstrüman: ${AMBIENT_MODE_LABELS[next.mode]}`);
     }
   };
 
   const renderAmbientIcon = () => {
     const colorClass = ambientEnabled ? 'text-[#3E7B58]' : 'text-[#8C7A6B] opacity-65';
     switch (ambientMode) {
-      case 'river':
-        return <Waves className={`w-4 h-4 ${colorClass}`} />;
-      case 'wind':
-        return <Wind className={`w-4 h-4 ${colorClass}`} />;
       case 'ney':
         return <Music className={`w-4 h-4 ${colorClass}`} />;
-      case 'rain':
-        return <CloudRain className={`w-4 h-4 ${colorClass}`} />;
-      case 'birds':
-        return <Bird className={`w-4 h-4 ${colorClass}`} />;
-      case 'night':
-        return <Moon className={`w-4 h-4 ${colorClass}`} />;
+      case 'kanun':
+        return <Sparkles className={`w-4 h-4 ${colorClass}`} />;
+      case 'oud':
+        return <Feather className={`w-4 h-4 ${colorClass}`} />;
+      case 'kalimba':
+        return <Bell className={`w-4 h-4 ${colorClass}`} />;
+      case 'ambient_pad':
+        return <Layers className={`w-4 h-4 ${colorClass}`} />;
       case 'auto':
       default:
         return <Sparkles className={`w-4 h-4 ${colorClass}`} />;

@@ -2,6 +2,7 @@ import React from 'react';
 import { Settings, HeartHandshake } from 'lucide-react';
 import { DhikrItem, ThemeConfig } from '../data/dhikrs';
 import { TasbihBeads } from './TasbihBeads';
+import { DailyReflectionCard } from './DailyReflectionCard';
 
 interface HomeScreenProps {
   theme: ThemeConfig;
@@ -83,6 +84,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           Kalbinizi dinlendiren, her nefeste huzura ve zikre eşlik eden sade manevi alanınız.
         </p>
       </header>
+
+      {/* Günün Tefekkürü (Sayaç Üzerinde Katlanabilir Zarif Cam Kart) */}
+      <section className="mt-3 mb-2 w-full">
+        <DailyReflectionCard theme={theme} reducedMotion={reducedMotion} />
+      </section>
 
       {/* Orta Görsel Tesbih Önizlemesi */}
       <section className="my-auto py-2 flex flex-col items-center">

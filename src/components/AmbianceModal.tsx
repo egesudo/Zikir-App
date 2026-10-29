@@ -12,6 +12,10 @@ import {
   Bird,
   Moon,
   Sparkles,
+  Feather,
+  Sunrise,
+  Layers,
+  Bell,
 } from 'lucide-react';
 import { THEMES, THEME_ORDER, ThemeId } from '../data/dhikrs';
 import {
@@ -71,25 +75,23 @@ export const AmbianceModal: React.FC<AmbianceModalProps> = ({
   const renderModeIcon = (mode: AmbientSoundMode, active: boolean) => {
     const cls = `w-3.5 h-3.5 shrink-0 ${active ? 'text-[#386B4D]' : 'text-[#8C6528]'}`;
     switch (mode) {
-      case 'river':
-        return <Waves className={cls} />;
-      case 'wind':
-        return <Wind className={cls} />;
       case 'ney':
         return <Music className={cls} />;
-      case 'rain':
-        return <CloudRain className={cls} />;
-      case 'birds':
-        return <Bird className={cls} />;
-      case 'night':
-        return <Moon className={cls} />;
+      case 'kanun':
+        return <Sparkles className={cls} />;
+      case 'oud':
+        return <Feather className={cls} />;
+      case 'kalimba':
+        return <Bell className={cls} />;
+      case 'ambient_pad':
+        return <Layers className={cls} />;
       case 'auto':
       default:
         return <Sparkles className={cls} />;
     }
   };
 
-  const volumePercent = Math.round((settings.ambientVolume ?? 0.35) * 100);
+  const volumePercent = Math.round((settings.ambientVolume ?? 0.20) * 100);
 
   return (
     <div

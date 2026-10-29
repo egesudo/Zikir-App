@@ -123,7 +123,7 @@ export default function App() {
         playCompletionChime(settings.soundEnabled);
         triggerHaptic(settings.vibrationEnabled, [30, 50, 40]);
       } else {
-        playBeadClickSound(settings.soundEnabled, isNisaneDivider);
+        playBeadClickSound(settings.soundEnabled, isNisaneDivider, settings.ambientMode);
         triggerHaptic(settings.vibrationEnabled, isNisaneDivider ? [22, 30, 18] : 15);
       }
 

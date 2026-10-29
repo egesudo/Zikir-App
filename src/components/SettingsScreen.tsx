@@ -13,6 +13,10 @@ import {
   CloudRain,
   Bird,
   Moon,
+  Feather,
+  Sunrise,
+  Layers,
+  Bell,
 } from 'lucide-react';
 import { THEMES, THEME_ORDER } from '../data/dhikrs';
 import { AmbientSoundMode, LastSessionSummary, SettingsState } from '../utils/storage';
@@ -36,45 +40,39 @@ const AMBIENT_MODES: {
 }[] = [
   {
     id: 'auto',
-    label: 'Temaya Uygun Ses (Otomatik)',
-    desc: 'Seçili temaya göre rüzgâr, kuş, yağmur, su veya gece sesi',
+    label: 'Temaya Uygun Enstrüman (Otomatik)',
+    desc: 'Seçili manevi atmosfer temasına en uygun akustik enstrüman tınısı',
     Icon: Sparkles,
   },
   {
-    id: 'birds',
-    label: 'Rüzgâr ve Kuş Sesleri',
-    desc: 'Doğa, Gün Doğumu ve Huzurlu Bahçe için hafif esinti ve kuşlar',
-    Icon: Bird,
-  },
-  {
-    id: 'rain',
-    label: 'Yumuşak Yağmur ve Damlalar',
-    desc: 'Huzurlu yağmur çisentisi ve su damlası rezonansı',
-    Icon: CloudRain,
-  },
-  {
-    id: 'night',
-    label: 'Gece Böcekleri ve Sükûnet',
-    desc: 'Hafif gece böcekleri ve sakin gece doğası',
-    Icon: Moon,
-  },
-  {
-    id: 'wind',
-    label: 'Esintili Vadi ve Su Sesi',
-    desc: 'Yumuşak akşam rüzgârı ve dingin su yansıması',
-    Icon: Wind,
-  },
-  {
-    id: 'river',
-    label: 'Hafif Su Dalgası ve Şadırvan',
-    desc: 'Ay ışığında su dalgalanması ve şadırvan akışı',
-    Icon: Waves,
-  },
-  {
     id: 'ney',
-    label: 'Hafif Ney Tefekkürü',
-    desc: 'Derinden gelen sıcak ney nefesi ve Rast dem tınısı',
+    label: 'Hafif Ney (Bambu & Nefes Nağmeleri)',
+    desc: 'Derinden gelen sıcak ney nefesi, Rast dem tınısı ve huzurlu nağmeler',
     Icon: Music,
+  },
+  {
+    id: 'kanun',
+    label: 'Zarif Kanun (Su Damlası Tel Tınısı)',
+    desc: 'Su gibi berrak dökülen 3-4 notalık duru akustik tel arpejleri',
+    Icon: Sparkles,
+  },
+  {
+    id: 'oud',
+    label: 'Sakin Ud & Tanbur (Tok Ahşap Tını)',
+    desc: 'Tok ahşap tekne rezonansı, pes frekanslar ve kadife mızrap dokunuşları',
+    Icon: Feather,
+  },
+  {
+    id: 'kalimba',
+    label: 'Dingin Kalimba (Meditatif Kristal Çan)',
+    desc: 'Masalsı, berrak ve iç ferahlatan metal lamelli kutu çan titreşimi',
+    Icon: Bell,
+  },
+  {
+    id: 'ambient_pad',
+    label: 'Sıcak Pad (432 Hz Kadife Zemin)',
+    desc: '432 Hz referanslı, nefes döngüsüyle hareketlenen kadife ses örtüsü',
+    Icon: Layers,
   },
 ];
 
@@ -116,7 +114,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     });
   };
 
-  const volumePercent = Math.round((settings.ambientVolume ?? 0.35) * 100);
+  const volumePercent = Math.round((settings.ambientVolume ?? 0.20) * 100);
 
   return (
     <main className="relative z-10 min-h-dvh flex flex-col px-5 pt-5 pb-8 max-w-xl mx-auto">

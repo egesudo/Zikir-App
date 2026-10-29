@@ -1,6 +1,6 @@
 {
-  "summary":  "Implementation plan for adding 4 new peaceful animated background themes (Misty Mountain Peak, Autumn Breeze, Calm Seashore, Snowy Winter Morning) with custom Web Audio API nature soundscapes and EMA rhythm synchronization.",
-  "updatedAt":  "2026-10-29T15:50:03.914852101Z",
+  "summary":  "Ekran görüntüsünde yer alan eski ses listesini kaldırıp yerine 5 ana akustik enstrümanı (Ney, Kanun, Ud/Tanbur, Kalimba, Sıcak Pad) yerleştiren; her enstrümanın arkasında durgun seher yeli ve fısıltı düzeyinde doğa sesleri akıtan; 12-16 saniyelik seyrek nağmeler ve zikir boncuğunda seçili enstrümana özel mikro-tını üreten; 3 saniyelik soft-ramp açılışı ve tepe engelleyici (peak limiter) mimarisini kuran uygulama planı.",
+  "updatedAt":  "2026-10-29T18:58:37.512758085Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

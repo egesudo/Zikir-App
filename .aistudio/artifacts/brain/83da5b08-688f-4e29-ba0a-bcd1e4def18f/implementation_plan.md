@@ -1,104 +1,71 @@
-# Yeni Huzur Verici Canlı Arka Plan Ambiyans Temaları ve Özel Doğa Sesleri
+# Uygulama Planı: 5 Enstrüman Tınısı, Doğa Ana Hattı ve Peak Limiter Ses Motoru Güncellemesi
 
-Mevcut **“Allah'a Adım Adım”** zikir uygulamasına; kullanıcının tercih ettiği **4 yeni canlı doğa ambiyansı temasını**, her temaya özgü **çok katmanlı SVG/CSS ve Canvas parçacık animasyonlarını**, **özel Web Audio API doğa sesi dizilerini** ve **Ritim Senkronizasyonu** desteğini entegre eder.
-
-## Kullanıcı İncelemesi ve Onaylanan Kararlar
-
-> [!IMPORTANT]
-> Kullanıcının 1. aşamada onayladığı tema ve ses tercihleri aşağıda özetlenmiştir. Tüm yeni temalar mevcut 7 temayla birlikte ambiyans seçicide yer alacak ve zikir ilerlemesini sıfırlamadan anında geçiş yapılabilecektir.
-
-- **Onaylanan Karar 1 (Yeni Canlı Arka Plan Temaları):**
-  1. **Sisli Dağ Zirvesi ve Bulut Denizi (`misty_mountain`):** Katmanlı dağ silüetleri arasında süzülen bulut denizi, nefes alan vadi sisi, yumuşak zirve ışığı ve yüksek irtifa ışık zerrecikleri.
-  2. **Sonbahar Esintisi ve Altın Yapraklar (`autumn_breeze`):** Kehribar, kızıl ve altın sarısı tonlarda rüzgârla savrulan akçaağaç yaprakları, sıcak sonbahar güneşi huzmeleri ve dalgalanan altın başaklar.
-  3. **Sakin Deniz Kıyısı ve Hafif Dalgalar (`calm_seashore`):** Turkuaz ve sedef mavisi kıyı suları, kıyıya vuran ritmik köpüklü dalga halkaları, ufukta süzülen martılar ve su üstü güneş parıltıları.
-  4. **Karlı Kış Sabahı ve Süzülen Kar Taneleri (`snowy_winter`):** Yumuşak buz mavisi ve sedefli kış sabahı gökyüzü, karla kaplı çam tepeleri, Canvas + SVG üzerinde huzurla süzülen kristal kar taneleri ve dingin sabah sisi.
-- **Onaylanan Karar 2 (Özel Doğa Sesleri ve Ritim Uyumu):** Her yeni temaya özel Web Audio API akustik doğa sesi katmanları (`mountain_wind`, `autumn_leaves`, `ocean_waves`, `winter_breeze`) eklenecek ve kullanıcının zikir ritmiyle (EMA) hem görsel animasyon hızı hem de ses nefes zarfı senkronize çalışacaktır.
+Kullanıcının paylaştığı ekran görüntüsü ve tercihler doğrultusunda; ayarlar ve ambiyans menüsündeki eski karmaşık ses listesi ("Gece Böcekleri", "Esintili Vadi", "Hafif Su Dalgası" vb.) tamamen kaldırılarak yerine **5 ana akustik enstrüman** (Ney, Kanun, Ud/Tanbur, Kalimba, Sıcak Pad) yerleştirilecektir. Arka planda durgun seher yeli ana hat olarak akacak, 12-16 saniyede bir fısıltı düzeyinde melodik nağmeler duyulacak ve zikir boncuğu çekildikçe seçili enstrümandan çok hafif bir mikro-tını gelecektir.
 
 ---
 
-## 1. Genel Bakış ve Temel Konsept
+## 1. Mimari ve Ses Tasarımı İlkeleri
 
-- **Ne Yapar:** Kullanıcının zikir çekerken doğanın farklı mevsimlerini ve coğrafyalarını (yüksek dağ zirvesi, altın sonbahar korusu, dingin deniz kıyısı, sessiz kış sabahı) canlı, derinlikli ve göz yormayan animasyonlarla deneyimlemesini sağlar.
-- **Hedef Kullanıcı Deneyimi:** Uzun süreli zikir ve tefekkür oturumlarında gözü yormayan, okunabilirliği (4.5:1+ kontrast) koruyan, pil dostu ve işitsel olarak gerçekçi bir sükûnet ortamı.
-- **Temel Değer:** Statik renk geçişleri yerine her temanın kendine has fiziksel hareket dili (süzülen kar taneleri, kıyıya vuran köpüklü dalgalar, bulut denizi akışı, dökülen altın yapraklar) ve akustik doğa imzası bulunur.
+1. **Görsel Ses Dizinlerinin Yenilenmesi (Arayüz Düzenlemesi):**
+   - Kullanıcının ilettiği ekran görüntüsündeki eski doğa sesleri listesi tamamen kaldırılarak, doğrudan enstrüman kimliğini yansıtan zarif kartlar yerleştirilecektir:
+     - **Otomatik (Manevi Temaya Göre Enstrüman)**
+     - **Ney (Bambu & Nefes Nağmeleri)**
+     - **Kanun (Zarif Tel Arpejleri & Berrak Tını)**
+     - **Ud & Tanbur (Tok Ahşap Mızrap Tınısı)**
+     - **Kalimba (Meditatif Kristal Çan Tınısı)**
+     - **Sıcak Pad (432 Hz Kadife Zemin Akoru)**
 
----
+2. **Durgun Seher Yeli ve Kuş Sesleri Ana Hattı:**
+   - Her enstrümanın zemininde, ses patlaması yapmayan 220 Hz alçak geçiren filtreli sakin bir seher esintisi ve 18 saniyede bir beliren fısıltı düzeyinde seher kuşu akışı bulunacaktır.
 
-## 2. Kullanıcı Deneyimi ve Görsel Tasarım
+3. **12–16 Saniyelik Seyrek Nağme Döngüsü:**
+   - Seçili enstrümana uygun olarak her 13.5 saniyede bir (12-16 saniye aralığında), zikri bölmeyen fısıltı seviyesinde (0.014 - 0.018 gain) 3-4 notalık duru nağmeler çalacaktır.
 
-### A. 4 Yeni Ambiyans Temasının Görsel ve Atmosferik Kimliği
+4. **Zikir Boncuğunda Enstrümana Özel Mikro-Tını Etkileşimi:**
+   - Boncuk çekildiğinde, tok ahşap boncuk dokunuşuyla birlikte **seçili enstrümana özgü mikro-fısıltı** (0.006 gain) yankılanacaktır:
+     - Ney seçiliyse: hafif ney nefesi
+     - Kanun seçiliyse: su gibi tek tel dokunuşu
+     - Ud seçiliyse: tok ahşap mızrap tınısı
+     - Kalimba seçiliyse: berrak minik çan çınlaması
+     - Pad seçiliyse: kadife mikro-akustik kabarma
 
-1. **Sisli Dağ Zirvesi (`misty_mountain` — *Misty Mountain*)**
-   - **Görsel Katmanlar:** Arka planda pastel arduvaz mavisi ve gümüş-kehribar şafak geçişi; 4 kademeli uzak dağ zirveleri; vadiler arasında yatay ve dikey nefes alarak akan çok katmanlı **Bulut Denizi (Sea of Clouds)**; zirveden süzülen yumuşak ışık huzmeleri.
-   - **Tesbih Boncukları:** *Kuvars Kristali*, *Dağ Arduvazı* ve *Buzul Kehribarı* tonlarında yarı saydam parlak boncuklar.
-   - **Özel Doğa Sesi (`mountain_wind`):** Yüksek irtifa yumuşak vadi esintisi, derin akustik dağ yankısı ve uzaktan gelen dingin kartal/kuş çağrıları.
-
-2. **Sonbahar Esintisi (`autumn_breeze` — *Autumn Breeze*)**
-   - **Görsel Katmanlar:** Sıcak krem-kehribar gökyüzü, kızıl ve altın sarısı sonbahar tepeleri, rüzgârla diyagonal süzülen ve kendi ekseninde salınan çoklu **Altın Yaprak (`autumnLeafFall`)** katmanları, sıcak ikindi güneşi huzmeleri.
-   - **Tesbih Boncukları:** *Akçaağaç Kehribarı*, *Tarçın Ağacı* (ahşap dokulu) ve *Altın Yaprak* boncukları.
-   - **Özel Doğa Sesi (`autumn_leaves`):** Belirgin kuru yaprak hışırtısı (`1450Hz` bandpass + LFO rüzgâr kabarması), ılık sonbahar rüzgârı ve sakin orman kuşları.
-
-3. **Sakin Deniz Kıyısı (`calm_seashore` — *Calm Seashore*)**
-   - **Görsel Katmanlar:** Açık gök mavisi ve turkuaz ufuk, güneşin deniz yüzeyindeki elmas parıltıları (`waterShimmer`), sahile doğru ritmik olarak genişleyip sönen **Kıyı Dalgaları (`shoreWaveRoll`)**, su yüzeyinde genişleyen halkalar ve ufukta süzülen kuşlar.
-   - **Tesbih Boncukları:** *Deniz Köpüğü İncisi*, *Akdeniz Turkuazı* ve *Mercan Taşı* boncukları.
-   - **Özel Doğa Sesi (`ocean_waves`):** Periyodik olarak kıyıya vurup geri çekilen ritmik deniz dalgası zarfı (`0.11 Hz` LFO modülasyonlu köpük ve su akışı), kıyı çakıl su şırıltısı ve uzaktan gelen hafif martı/kıyı esintisi.
-
-4. **Karlı Kış Sabahı (`snowy_winter` — *Snowy Winter*)**
-   - **Görsel Katmanlar:** Dingin buz mavisi, lavanta grisi ve sedef beyazı kış sabahı gökyüzü; karla örtülü yumuşak tepeler ve çam silüetleri; hem SVG hem de Canvas katmanında rüzgârla yumuşakça salınarak inen **Kar Taneleri (`snowfall` parçacık sistemi)** ve nefes alan sabah kırağı sisi.
-   - **Tesbih Boncukları:** *Kış İncisi*, *Buz Kristali* (fasetli) ve *Gümüş Çam* boncukları.
-   - **Özel Doğa Sesi (`winter_breeze`):** İnce, kristal berraklığında yumuşak kış esintisi, kar sessizliğini hissettiren ılık akustik rezonans ve nadir kristal çan/buz damlası tınıları.
-
-### B. Okunabilirlik ve Ergonomi Kuralları
-- **Kontrast Koruması:** Açık tonlu temalarda (`autumn_breeze`, `snowy_winter`, `calm_seashore`) koyu arduvaz/toprak metin rengi (`isDarkText: true`) ve yarı saydam krem cam yüzeyler; derin kontrastlı `misty_mountain` temasında ise fildişi metin ve koyu cam yüzeyler kullanılarak WCAG AA (4.5:1+) okunabilirlik standardı korunur.
-- **Mobil Dokunma Ergonomisi:** Ambiyans seçici modalındaki ve ayarlar ekranındaki tema kartları en az `48x48px` dokunma alanına sahip olacak, küçük canlı renk önizlemeleri ve ses açıklamalarıyla tek elle kolayca seçilebilecektir.
+5. **Soft-Ramp Fade-In ve Peak Limiter Koruması:**
+   - 3 saniyelik pürüzsüz ipeksi başlangıç (`soft-ramp` / `setTargetAtTime` tau=0.95).
+   - Hiperbolik tanjant `WaveShaper` + `DynamicsCompressor` (-24 dBFS eşik, 32 dB knee) ile sıfır kırpılma, sıfır hoparlör cızırtısı.
+   - Başlangıç ses seviyesi %20 (`0.20`), tavan kazancı maksimum 0.05 gain ile sınırlı.
 
 ---
 
-## 3. Temel Ürün Kararları ve Teknik Tercihler
+## 2. Değişiklik Yapılacak Dosyalar
 
-- **Karar 1: Hibrit SVG/CSS Keyframes + Canvas 2D Parçacık Mimarisi**
-  - *Seçilen Yaklaşım:* Ufuk, dağlar, dalgalar, bulut denizi ve büyük yapraklar GPU hızlandırmalı (`transform`, `opacity`) SVG/CSS katmanlarıyla; kar taneleri (`snow`), kıyı su parıltıları (`sea_sparkle`) ve rüzgâr polenleri ise tek bir `requestAnimationFrame` Canvas döngüsüyle çizilir.
-  - *Neden:* Mobil cihazlarda sıfır kare düşüşü (60 FPS) ve düşük pil tüketimi sağlar; sekme arka plana geçtiğinde (`document.hidden`) veya `prefers-reduced-motion` etkin olduğunda tüm hesaplamalar otomatik duraklatılır.
-- **Karar 2: Web Animations API ile Sıçramasız Ritim Senkronizasyonu**
-  - *Seçilen Yaklaşım:* Yeni eklenen 4 temadaki tüm CSS animasyonları (`cloudSeaFlow`, `autumnLeafFall`, `shoreWaveRoll`, `winterMistDrift`) ve Canvas kar/parıltı parçacıkları, mevcut `rhythmTempoScale` (`0.90x – 1.42x`) değerine bağlanır.
-  - *Neden:* Kullanıcı zikir çektikçe kar tanelerinin süzülüşü, kıyı dalgalarının ritmi ve bulut denizinin akışı hiçbir animasyon sıçraması olmadan huzurlu bir ivme kazanır.
+### 1. `src/utils/storage.ts`
+- `AmbientSoundMode` tipini 5 ana enstrümana indirgeme:
+  `'auto' | 'ney' | 'kanun' | 'oud' | 'kalimba' | 'ambient_pad'`
+- `AMBIENT_MODE_ORDER` ve `AMBIENT_MODE_LABELS` listelerini arayüz için temiz ve sade olarak güncelleme.
+- `DEFAULT_SETTINGS.ambientVolume` = `0.20` garantileme.
+
+### 2. `src/utils/sound.ts`
+- `ActiveSoundProfile` tipini `AmbientSoundMode` ile eşitleme (`auto`, `ney`, `kanun`, `oud`, `kalimba`, `ambient_pad`).
+- 5 enstrüman için arka plan seher yeli ve enstrüman katmanlarını oluşturma.
+- 12-16 saniyelik seyrek nağme motorunu seçili enstrümana bağlama.
+- `playBeadClickSound` fonksiyonunu seçili enstrümanın moduna göre mikro-tını üretecek şekilde güncelleme.
+- 3 saniyelik `soft-ramp` ve `peak limiter` filtreleme zincirini optimize etme.
+
+### 3. `src/components/SettingsScreen.tsx`
+- Kullanıcının ekran görüntüsünde işaret ettiği eski doğa listesini kaldırıp yerine 5 enstrüman kartını şık simgelerle (`Music`, `Sparkles`, `Feather`, `Bell`, `Layers`) yerleştirme.
+
+### 4. `src/components/AmbianceModal.tsx`
+- Hızlı ambiyans modalındaki ses seçeneklerini de aynı 5 enstrümanla senkronize etme.
 
 ---
 
-## 4. Teknik Mimari ve Veri Akışı
+## 3. Doğrulama ve Test Adımları
 
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│                        KULLANICI ZİKİR ETKİLEŞİMİ                        │
-│          (Tesbih Dokunuşu / Tema Seçimi / Ses & Hareket Ayarları)        │
-└───────────────────┬──────────────────────────────────┬───────────────────┘
-                    │                                  │
-                    ▼                                  ▼
-┌───────────────────────────────────────┐  ┌───────────────────────────────┐
-│     EMA RİTİM & SES MOTORU (Audio)    │  │   TEMA & DURUM YÖNETİMİ       │
-│  • Dual-Layer EMA Hız Hesaplama       │  │  • 11 Canlı Ambiyans Teması   │
-│  • 600ms Pürüzsüz Crossfade           │  │    (7 Mevcut + 4 Yeni Tema)   │
-│  • Zikir Boncuğu Mikro-Ducking        │  │  • localStorage Kalıcılığı    │
-│  • Özel Doğa Sesi Sentezleyicileri:   │  │  • Otomatik Ses Eşleştirme    │
-│    - mountain_wind (Vadi Rüzgârı)     │  └───────────────┬───────────────┘
-│    - autumn_leaves (Yaprak Hışırtısı) │                  │
-│    - ocean_waves   (Kıyı Dalgaları)   │                  │
-│    - winter_breeze (Kış Esintisi)     │                  │
-└───────────────────┬───────────────────┘                  │
-                    │ rhythmTempoScale (0.90x - 1.42x)     │ themeId
-                    └───────────────────┬──────────────────┘
-                                        ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│                 CANLI ARKA PLAN SAHNE MOTORU (SceneBackground)           │
-├───────────────────────────────────┬──────────────────────────────────────┤
-│   SVG + CSS GPU Katmanları        │   Canvas 2D Parçacık Sistemi         │
-│   • getAnimations().playbackRate  │   • dt * rhythmScaleRef.current      │
-│   • Bulut Denizi (cloudSeaFlow)   │   • Kar Taneleri (snow)              │
-│   • Altın Yaprak (autumnLeafFall) │   • Deniz Parıltısı (sea_sparkle)    │
-│   • Kıyı Dalgası (shoreWaveRoll)  │   • Sonbahar Tozu & Işık Zerrecikleri│
-└───────────────────────────────────┴──────────────────────────────────────┘
-```
-
-### Etkileşim ve Durum Eşleştirmesi
-- **Tema Veri Modeli:** `ThemeId` birleşim tipine `'misty_mountain' | 'autumn_breeze' | 'calm_seashore' | 'snowy_winter'` eklenir; her biri kendi renk paleti, kontrast bayrağı (`isDarkText`), tesbih boncuğu dizisi ve ses açıklamasıyla tanımlanır.
-- **Ambiyans Ses Modları:** `AmbientSoundMode` tipine `'mountain_wind' | 'autumn_leaves' | 'ocean_waves' | 'winter_breeze'` modları eklenir. Kullanıcı ambiyans seçiciden yeni bir tema seçtiğinde otomatik mod (`auto`) ilgili temanın özgün doğa sesini 600ms crossfade ile başlatır; ayrıca Ayarlar ekranından bu sesler manuel olarak da seçilebilir.
+1. **Statik Kod Analizi (`lint_applet`):**
+   - TypeScript derleme denetimi (`tsc --noEmit`) ile sıfır hata sağlama.
+2. **Derleme Doğrulaması (`compile_applet`):**
+   - Vite üretim paketlemesini başarıyla tamamlama.
+3. **Kullanıcı Arayüzü ve Akustik Test:**
+   - Ekran görüntüsündeki eski ses listesinin kalktığı, yerine 5 huzurlu enstrümanın geldiğinin doğrulanması.
+   - %20 kısık sesle ve 3 saniyede usulca başlayan açılışın test edilmesi.
+   - Boncuk çekildikçe seçili enstrümandan gelen mikro-tınıların dinlenmesi.
